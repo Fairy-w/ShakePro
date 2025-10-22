@@ -1,0 +1,454 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "ShakePro"
+    },
+    {
+      "name": "login_screen",
+      "value": "登陆界面"
+    },
+    {
+      "name": "login_prompt",
+      "value": "未满18岁未成年请勿注册"
+    },
+    {
+      "name": "account",
+      "value": "账号"
+    },
+    {
+      "name": "password",
+      "value": "密码"
+    },
+    {
+      "name": "sms_login",
+      "value": "短信验证码登录"
+    },
+    {
+      "name": "forgot_password",
+      "value": "忘记密码"
+    },
+    {
+      "name": "login",
+      "value": "登录"
+    },
+    {
+      "name": "register_account",
+      "value": "注册账号"
+    },
+    {
+      "name": "alternative_login",
+      "value": "其他方式登录"
+    },
+    {
+      "name": "input_empty_error",
+      "value": "输入不能为空"
+    },
+    {
+      "name": "home",
+      "value": "首页"
+    },
+    {
+      "name": "my_cocktail",
+      "value": "我的鸡尾酒"
+    },
+    {
+      "name": "favorite_recipes",
+      "value": "收藏配方"
+    },
+    {
+      "name": "material_selection",
+      "value": "选择材料"
+    },
+    {
+      "name": "classic_formula",
+      "value": "经典配方"
+    },
+    {
+      "name": "friend",
+      "value": "酒友圈"
+    },
+    {
+      "name": "discontinued_formulas",
+      "value": "废弃配方"
+    },
+    {
+      "name": "the_unforgettable",
+      "value": "难忘之情"
+    },
+    {
+      "name": "contemporary_classics",
+      "value": "当代经典"
+    },
+    {
+      "name": "new_era_drink",
+      "value": "NewEra饮品"
+    },
+    {
+      "name": "dry_martini",
+      "value": "干马提尼, THE UNFORGETTABLE"
+    },
+    {
+      "name": "zombie",
+      "value": "僵尸, CONTEMPORARY CLASSICS"
+    },
+    {
+      "name": "paloma",
+      "value": "帕洛玛, NEW ERA DRINKS"
+    },
+    {
+      "name": "list",
+      "value": "经典酒单"
+    },
+    {
+      "name": "setting_list_data",
+      "value": "数据管理"
+    },
+    {
+      "name": "setting_list_menu",
+      "value": "菜单设置"
+    },
+    {
+      "name": "setting_list_news",
+      "value": "推送通知"
+    },
+
+    {
+      "name": "custom_tab_home",
+      "value": "首页"
+    },
+    {
+      "name": "custom_tab_news",
+      "value": "配方"
+    },
+    {
+      "name": "custom_tab_friend",
+      "value": "商城"
+    },
+    {
+      "name": "custom_tab_mine",
+      "value": "我的"
+    },
+    {
+      "name": "secondarylinkage_shared_desc",
+      "value": "description"
+    },
+    {
+      "name": "secondarylinkage_secondary_link",
+      "value": "二级联动"
+    },
+    {
+      "name": "secondarylinkage_secondary_link_desc",
+      "value": "当前界面主要展示了通过选择一个列表（一级列表），来更新另一个列表（二级列表）的选项的效果"
+    },
+    {
+      "name": "secondarylinkage_nomore",
+      "value": "没有更多了"
+    },
+    {
+      "name": "secondarylinkage_one_hundred_percent",
+      "value": "100%"
+    },
+    {
+      "name": "secondarylinkage_text_size_headline",
+      "value": "20"
+    },
+    {
+      "name": "secondarylinkage_elements_margin_vertical_m",
+      "value": "8"
+    },
+    {
+      "name": "secondarylinkage_corner_radius_default_m",
+      "value": "12"
+    },
+    {
+      "name": "secondarylinkage_card_padding_start",
+      "value": "12"
+    },
+    {
+      "name": "Gin_desc",
+      "value": "金酒"
+    },
+    {
+      "name": "Liqueur_desc",
+      "value": "利口酒"
+    },
+    {
+      "name": "Tequila_desc",
+      "value": "龙舌兰"
+    },
+    {
+      "name": "Whiskey_desc",
+      "value": "威士忌"
+    },
+    {
+      "name": "Vodka_desc",
+      "value": "伏特加"
+    },
+    {
+      "name": "Brandy_desc",
+      "value": "白兰地"
+    },
+    {
+      "name": "SoftDrink_desc",
+      "value": "软饮"
+    },
+    {
+      "name": "Beer_desc",
+      "value": "啤酒"
+    },
+    {
+      "name": "search_interesting_content",
+      "value": "搜索感兴趣的内容"
+    },
+    {
+      "name": "search_cocktail_content",
+      "value": "请输入您想要搜索的鸡尾酒名"
+    },
+    {
+      "name": "Christmas_Solero",
+      "value": "圣诞至爱 Christmas Solero"
+    },
+    {
+      "name": "Blue_Coral_Sea",
+      "value": "蓝色珊瑚海 Blue Coral Sea"
+    },
+    {
+      "name": "Eye_Opener",
+      "value": "高眼 Eye Opener"
+    },
+    {
+      "name": "Hot_Girl",
+      "value": "火辣女孩 Hot Girl"
+    },
+    {
+      "name": "Florida_Negroni",
+      "value": "佛罗里达尼戈诺尼 Florida Negroni"
+    },
+    {
+      "name": "Rum_Colins",
+      "value": "朗姆科林斯 Rum Colins"
+    },
+    {
+      "name": "Dash_of_Danger_Daiquiri",
+      "value": "危险戴吉利 Dash of Danger Daiquiri"
+    },
+    {
+      "name": "slidetohideanddisplace_user_name",
+      "value": "._."
+    },
+    {
+      "name": "slidetohideanddisplace_choose_identity",
+      "value": "我的积分：0(可抵0.00元)"
+    },
+    {
+      "name": "slidetohideanddisplace_satisfaction",
+      "value": "满意度调查"
+    },
+    {
+      "name": "slidetohideanddisplace_vip",
+      "value": "VIP"
+    },
+    {
+      "name": "slidetohideanddisplace_member_services",
+      "value": "会员服务"
+    },
+    {
+      "name": "slidetohideanddisplace_description_slide",
+      "value": "上滑页面，用户头像逐渐缩小并移动到返回文字的后方，原本展示的手机号/选择身份/满意度调查的文本渐隐，顶部手机号文本渐显；下滑页面，用户头像逐渐放大并向下移动，顶部手机号文本渐隐，下方手机号/选择身份/满意度调查的文本渐显"
+    },
+    {
+      "name": "slidetohideanddisplace_payment",
+      "value": "缓存"
+    },
+    {
+      "name": "slidetohideanddisplace_receiving",
+      "value": "作品"
+    },
+    {
+      "name": "slidetohideanddisplace_comments",
+      "value": "材料"
+    },
+    {
+      "name": "slidetohideanddisplace_more",
+      "value": "更多"
+    },
+    {
+      "name": "slidetohideanddisplace_fans",
+      "value": "粉丝"
+    },
+    {
+      "name": "slidetohideanddisplace_favorites",
+      "value": "收藏"
+    },
+    {
+      "name": "slidetohideanddisplace_follow",
+      "value": "关注"
+    },
+    {
+      "name": "slidetohideanddisplace_history",
+      "value": "历史"
+    },
+    {
+      "name": "slidetohideanddisplace_focus_on_hot_topics",
+      "value": "聚焦热点"
+    },
+    {
+      "name": "slidetohideanddisplace_recommended_by_friends",
+      "value": "朋友推荐"
+    },
+    {
+      "name": "slidetohideanddisplace_news_directly_arrived",
+      "value": "新闻直通"
+    },
+    {
+      "name": "slidetohideanddisplace_photography_sharing",
+      "value": "摄影分享"
+    },
+    {
+      "name": "slidetohideanddisplace_width_of_elements_in_orders",
+      "value": "25%"
+    },
+    {
+      "name": "slidetohideanddisplace_width_of_elements_in_interaction",
+      "value": "25%"
+    },
+    {
+      "name": "slidetohideanddisplace_size_ninety_percent",
+      "value": "90%"
+    },
+    {
+      "name": "slidetohideanddisplace_size_full",
+      "value": "100%"
+    },
+    {
+      "name": "slidetohideanddisplace_size_one_hundred_and_twenty",
+      "value": "120%"
+    },
+    {
+      "name": "slidetohideanddisplace_member",
+      "value": "开通会员"
+    },
+    {
+      "name": "slidetohideanddisplace_get_off_your_purchases",
+      "value": "购物享首单立减"
+    },
+    {
+      "name": "slidetohideanddisplace_in_the_end",
+      "value": "到底了~"
+    },
+    {
+      "name": "slidetohideanddisplace_center_of_right",
+      "value": "权益中心"
+    },
+    {
+      "name": "slidetohideanddisplace_guess_your_like",
+      "value": "猜你喜欢"
+    },
+    {
+      "name": "slidetohideanddisplace_settings",
+      "value": "设置"
+    },
+    {
+      "name": "slidetohideanddisplace_customer_service",
+      "value": "客服"
+    },
+    {
+      "name": "transition_animation_two_fr",
+      "value": "1fr 1fr"
+    },
+    {
+      "name": "transition_animation_sub_page_description",
+      "value": "这是子页面"
+    },
+    {
+      "name": "transition_animation_page_description",
+      "value": "父页面（点击进入子页面）"
+    },
+    {
+      "name": "transition_animation_card_title1",
+      "value": "人间冷暖 冰与火"
+    },
+    {
+      "name": "transition_animation_author_name1",
+      "value": "用思念来注解"
+    },
+    {
+      "name": "transition_animation_card_content1",
+      "value": "#小众酒单 使用白朗姆和君度作为基酒，蓝橙力娇酒调出完美颜色"
+    },
+    {
+      "name": "transition_animation_card_title2",
+      "value": "莫吉托杯"
+    },
+    {
+      "name": "transition_animation_author_name2",
+      "value": "顺子"
+    },
+    {
+      "name": "transition_animation_card_content2",
+      "value": "第一杯鸡尾酒从莫吉托开始"
+    },
+    {
+      "name": "transition_animation_card_title3",
+      "value": "有点难喝怎么回事呢"
+    },
+    {
+      "name": "transition_animation_author_name3",
+      "value": "壹宅壹院"
+    },
+    {
+      "name": "transition_animation_card_content3",
+      "value": "#漂亮酒 #04 #叽里咕噜噜噜噜噜"
+    },
+    {
+      "name": "transition_animation_card_title4",
+      "value": "chill"
+    },
+    {
+      "name": "transition_animation_author_name4",
+      "value": "tzu-hsiao"
+    },
+    {
+      "name": "transition_animation_card_content4",
+      "value": "君度 白朗姆 chill boy"
+    },
+    {
+      "name": "transition_animation_card_title5",
+      "value": "Jasmine"
+    },
+    {
+      "name": "transition_animation_author_name5",
+      "value": "冰汤葫芦"
+    },
+    {
+      "name": "transition_animation_card_content5",
+      "value": "Dr.Bigglesworth"
+    },
+    {
+      "name": "transition_animation_card_title6",
+      "value": "还行"
+    },
+    {
+      "name": "transition_animation_author_name6",
+      "value": "阳崽"
+    },
+    {
+      "name": "transition_animation_card_content6",
+      "value": "复古 肉桂 奶油 美美嘟"
+    },
+    {
+      "name": "transition_animation_one_hundred_percent",
+      "value": "100%"
+    }
+
+  ]
+}
