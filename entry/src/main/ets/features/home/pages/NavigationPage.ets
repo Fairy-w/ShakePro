@@ -3,16 +3,12 @@ import { TabMenusInterfaceIRequired } from '../../../common/types/TabMenusInterf
 import { MainPage } from './HomePage';
 import { SecondaryLinkExample } from '../../../legacy/pages/SecondaryLinkExample';
 import { SlideToHideAndDisplaceComponent } from '../../../legacy/pages/SlideToHideAndDisplaceDemo';
-import { AICocktailPage } from './AICocktailPage';
 import { BartendingStationPage } from './BartendingStationPage';
 
 @Entry({ routeName: 'NavigationPage' })
 @Component
 export struct NavigationPage {
-  @State @Watch('handleCurrentIndexChange') currentIndex: number = 0;
-  @State isNavigationHidden: boolean = false;
-  @State navigationOffsetY: number = 0;
-  @State navigationOpacity: number = 1;
+  @State currentIndex: number = 0;
   @State tabsMenu: TabMenusInterfaceIRequired[] = [
     {
       text: $r('app.string.custom_tab_home'),
@@ -21,14 +17,6 @@ export struct NavigationPage {
       tabsFontColor: '#6D7F8B',
       tabsSelectFontColor: '#18323F',
       pagePath: 'features/home/pages/HomePage'
-    },
-    {
-      text: $r('app.string.custom_tab_ai'),
-      image: $r('app.media.tab_new'),
-      selectImage: $r('app.media.tab_new'),
-      tabsFontColor: '#6D7F8B',
-      tabsSelectFontColor: '#18323F',
-      pagePath: 'features/home/pages/AICocktailPage'
     },
     {
       text: $r('app.string.custom_tab_bar'),
@@ -60,61 +48,13 @@ export struct NavigationPage {
     this.currentIndex = index;
   };
 
-  private handleCurrentIndexChange(): void {
-    if (this.currentIndex === 1) {
-      this.hideNavigationBar();
-      return;
-    }
-    this.showNavigationBar();
-  }
-
-  private hideNavigationBar(): void {
-    if (this.isNavigationHidden && this.navigationOffsetY > 0) {
-      return;
-    }
-    this.isNavigationHidden = true;
-    animateTo({ duration: 260 }, () => {
-      this.navigationOffsetY = 120;
-      this.navigationOpacity = 0;
-    });
-  }
-
-  private showNavigationBar(): void {
-    if (!this.isNavigationHidden && this.navigationOffsetY === 0 && this.navigationOpacity === 1) {
-      return;
-    }
-    this.isNavigationHidden = false;
-    animateTo({ duration: 260 }, () => {
-      this.navigationOffsetY = 0;
-      this.navigationOpacity = 1;
-    });
-  }
-
-  private requestShowNavigationBar = () => {
-    if (this.currentIndex === 1) {
-      this.showNavigationBar();
-    }
-  };
-
-  private requestHideNavigationBar = () => {
-    if (this.currentIndex === 1) {
-      this.hideNavigationBar();
-    }
-  };
-
   @Builder
   private buildCurrentPage() {
     if (this.currentIndex === 0) {
       MainPage();
     } else if (this.currentIndex === 1) {
-      AICocktailPage({
-        isNavigationHidden: this.isNavigationHidden,
-        onRequestShowNavigation: this.requestShowNavigationBar,
-        onRequestHideNavigation: this.requestHideNavigationBar
-      });
-    } else if (this.currentIndex === 2) {
       BartendingStationPage();
-    } else if (this.currentIndex === 3) {
+    } else if (this.currentIndex === 2) {
       SecondaryLinkExample();
     } else {
       SlideToHideAndDisplaceComponent();
@@ -154,11 +94,9 @@ export struct NavigationPage {
         }
         .width('100%')
         .height('100%')
-        .clip(!(this.currentIndex === 1 && this.isNavigationHidden))
-        .borderRadius(this.currentIndex === 1 && this.isNavigationHidden ? 0 : 28)
+        .borderRadius(28)
         .backgroundColor('#F7FBFD')
-        .margin(this.currentIndex === 1 && this.isNavigationHidden ? { left: 0, right: 0, top: 0 } :
-          { left: 12, right: 12, top: 12 });
+        .margin({ left: 12, right: 12, top: 12 });
 
         TabsConcaveCircle({
           tabsMenu: this.tabsMenu,
@@ -170,13 +108,11 @@ export struct NavigationPage {
           tabsSelectFontColor: '#18323F',
           tabHeight: 82
         })
-          .margin({ left: 16, right: 16, bottom: 18 })
-          .translate({ x: 0, y: this.navigationOffsetY })
-          .opacity(this.navigationOpacity);
+          .margin({ left: 16, right: 16, bottom: 18 });
       }
       .width('100%')
       .height('100%')
-      .padding(this.currentIndex === 1 && this.isNavigationHidden ? { top: 0, bottom: 0 } : { top: 6, bottom: 4 });
+      .padding({ top: 6, bottom: 4 });
     }
     .width('100%')
     .height('100%');

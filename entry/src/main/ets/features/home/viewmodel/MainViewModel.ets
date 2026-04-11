@@ -19,7 +19,7 @@ export class MainViewModel {
       new ItemData($r('app.string.favorite_recipes'),$r('app.media.favorite_recipes')),
       new ItemData($r('app.string.classic_formula'),$r('app.media.classic_formula')),
       new ItemData($r('app.string.friend'),$r('app.media.friend')),
-      new ItemData($r('app.string.discontinued_formulas'),$r('app.media.discontinued_formulas'))
+      new ItemData($r('app.string.ai_cocktail'),$r('app.media.icon_cocktail'))
     ];
     return firstGirdData;
   }

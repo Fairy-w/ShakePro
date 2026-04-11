@@ -4,7 +4,8 @@
     "features/auth/pages/RegisterPage",
     "features/home/pages/NavigationPage",
     "features/home/pages/HomePage",
-    "features/cocktail/pages/MyCocktailPage",
+    "features/cocktail/pages/AICocktailPage",
+    "features/favorite/pages/MyFavoritePage",
     "features/cocktail/pages/CocktailPhotoPage",
     "features/profile/pages/ProfilePage"
   ]

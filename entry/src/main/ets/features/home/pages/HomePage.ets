@@ -79,17 +79,20 @@ export struct MainPage {
         .border({ width: 1, color: '#D7E6ED' });
 
         Column({ space: 2 }) {
-          Text('AI')
-            .fontSize(16)
+          Text('AI调酒')
+            .fontSize(14)
             .fontWeight(FontWeight.Bold)
             .fontColor('#124056');
         }
-        .width(58)
+        .width(74)
         .height(54)
         .justifyContent(FlexAlign.Center)
         .backgroundColor('#DDF5F1')
         .borderRadius(18)
-        .border({ width: 1, color: '#BFE7E6' });
+        .border({ width: 1, color: '#BFE7E6' })
+        .onClick(() => {
+          router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' }, 3000);
+        });
       }
       .width('100%');
     }
@@ -100,7 +103,7 @@ export struct MainPage {
   private buildHeroSection() {
     Stack({ alignContent: Alignment.BottomStart }) {
       Swiper(this.swiperController) {
-        ForEach(MainViewModel.getSwiperImages(), (img: Resource, index: number) => {
+        ForEach(MainViewModel.getSwiperImages(), (img: Resource) => {
           Stack({ alignContent: Alignment.BottomStart }) {
             Image(img)
               .width('100%')
@@ -117,26 +120,6 @@ export struct MainPage {
                 repeating: false,
                 colors: [['#1D4A5A12', 0.0], ['#1D4A5A55', 0.58], ['#123241D0', 1.0]]
               });
-
-            // Column({ space: 10 }) {
-            //   Text(index === 0 ? '今日推荐酒单' : '精选灵感库')
-            //     .fontSize(14)
-            //     .fontWeight(FontWeight.Medium)
-            //     .fontColor('#D7EEF6');
-            //
-            //   Text(index === 0 ? '根据库存与偏好自动生成推荐方案' : '从经典到新配方，快速定位当前需求')
-            //     .fontSize(24)
-            //     .fontWeight(FontWeight.Bold)
-            //     .fontColor('#FFFFFF')
-            //     .lineHeight(30);
-            //
-            //   Text('支持 AI 建议、原料筛选和功能模块联动。')
-            //     .fontSize(12)
-            //     .fontColor('#D8EBF2');
-            // }
-            // .width('100%')
-            // .alignItems(HorizontalAlign.Start)
-            // .padding(20);
           }
         });
       }
@@ -365,16 +348,22 @@ export struct MainPage {
     if (title.id === $r('app.string.friend').id) {
       return '用于分享作品和查看协作内容';
     }
+    if (title.id === $r('app.string.ai_cocktail').id) {
+      return '根据口味、场景和材料快速生成专属推荐';
+    }
     return '后续用于扩展更多历史与实验模块';
   }
 
   private navigateToPage(title: Resource): void {
     let targetUrl: string = '';
 
-    if (title.id === $r('app.string.my_cocktail').id) {
-      targetUrl = 'features/cocktail/pages/MyCocktailPage';
+    if (title.id === $r('app.string.my_cocktail').id ||
+      title.id === $r('app.string.favorite_recipes').id) {
+      targetUrl = 'features/favorite/pages/MyFavoritePage';
     } else if (title.id === $r('app.string.material_selection').id) {
       targetUrl = 'features/cocktail/pages/CocktailPhotoPage';
+    } else if (title.id === $r('app.string.ai_cocktail').id) {
+      targetUrl = 'features/cocktail/pages/AICocktailPage';
     }
 
     if (!targetUrl) {
