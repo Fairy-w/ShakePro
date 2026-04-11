@@ -1,4 +1,4 @@
-{
+﻿{
   "string": [
     {
       "name": "module_desc",
@@ -58,15 +58,15 @@
     },
     {
       "name": "my_cocktail",
-      "value": "我的酒单"
+      "value": "我的鸡尾酒"
     },
     {
       "name": "favorite_recipes",
-      "value": "我的收藏"
+      "value": "收藏配方"
     },
     {
       "name": "material_selection",
-      "value": "材料选择"
+      "value": "选择材料"
     },
     {
       "name": "classic_formula",
@@ -74,7 +74,11 @@
     },
     {
       "name": "friend",
-      "value": "酒友社区"
+      "value": "酒友圈"
+    },
+    {
+      "name": "discontinued_formulas",
+      "value": "废弃配方"
     },
     {
       "name": "the_unforgettable",
@@ -120,14 +124,6 @@
     {
       "name": "custom_tab_home",
       "value": "首页"
-    },
-    {
-      "name": "ai_cocktail",
-      "value": "AI调酒"
-    },
-    {
-      "name": "custom_tab_bar",
-      "value": "调酒台"
     },
     {
       "name": "custom_tab_news",
@@ -456,3 +452,4 @@
 
   ]
 }
+
