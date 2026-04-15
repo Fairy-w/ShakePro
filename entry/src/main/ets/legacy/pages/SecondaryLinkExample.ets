@@ -216,11 +216,7 @@ export struct SecondaryLinkExample {
           }
         })
         .onScrollIndex((start: number) => {
-          const currentClassIndex = this.findClassIndex(start);
-          if (currentClassIndex !== this.currentTagIndex && !this.isClickTagList) {
-            this.currentTagIndex = currentClassIndex;
-            this.classifyScroller.scrollToIndex(currentClassIndex, true);
-          }
+          this.handleContentScrollIndex(start);
         });
       }
       .width('100%')
@@ -234,6 +230,16 @@ export struct SecondaryLinkExample {
 
   findItemIndex(index: number): number {
     return this.records[index];
+  }
+
+  private handleContentScrollIndex(start: number): void {
+    if (this.isClickTagList) {
+      return;
+    }
+    if (this.findClassIndex(start) !== this.currentTagIndex) {
+      this.currentTagIndex = this.findClassIndex(start);
+      this.classifyScroller.scrollToIndex(this.findClassIndex(start), true);
+    }
   }
 
   findClassIndex(index: number): number {

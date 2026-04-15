@@ -99,6 +99,14 @@ export struct AICocktailResultsSection {
     return this.favoritedRecipeKeys.indexOf(buildAiCocktailRecipeKey(recipe)) !== -1;
   }
 
+  private toggleCurrentRecipeFavorite(): void {
+    const recipe: AiGenerateRecipeResponse | undefined = this.getActiveRecipe();
+    if (!recipe) {
+      return;
+    }
+    this.onToggleFavorite(recipe);
+  }
+
   @Builder
   private buildLoadingBody() {
     Column({ space: 14 }) {
@@ -381,11 +389,7 @@ export struct AICocktailResultsSection {
               })
               .padding({ left: 12, right: 12 })
               .onClick(() => {
-                const activeRecipe: AiGenerateRecipeResponse | undefined = this.getActiveRecipe();
-                if (!activeRecipe) {
-                  return;
-                }
-                this.onToggleFavorite(activeRecipe);
+                this.toggleCurrentRecipeFavorite();
               });
           }
         }
