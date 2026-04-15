@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\lenovo\\.ohos\\config\\default_ShakePro_004_vnzxzRgqiSV7zeIblBbQER8NRuRaseCh3XUcBQjF6Jc=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001AD8FFA2F49C454C3635EBDCB5DD864C4624DE7F9C220D6313994CD575A73C270E8504F1C605C3",
+          "profile": "C:\\Users\\lenovo\\.ohos\\config\\default_ShakePro_004_vnzxzRgqiSV7zeIblBbQER8NRuRaseCh3XUcBQjF6Jc=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\lenovo\\.ohos\\config\\default_ShakePro_004_vnzxzRgqiSV7zeIblBbQER8NRuRaseCh3XUcBQjF6Jc=.p12",
+          "storePassword": "0000001A6AE9339FD28073D719B2CBF63E334CD867BDD34E136B915FF721DFF9AF7364C61DE03BD189E8"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",

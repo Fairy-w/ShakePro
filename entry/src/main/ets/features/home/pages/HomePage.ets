@@ -1,7 +1,7 @@
 import promptAction from '@ohos.promptAction';
 import ItemData from '../model/ItemData';
 import MainViewModel from '../viewmodel/MainViewModel';
-import { router } from '@kit.ArkUI';
+import router from '@ohos.router';
 
 interface DashboardStat {
   value: string;
@@ -12,6 +12,7 @@ interface DashboardStat {
 @Component
 export struct MainPage {
   private swiperController: SwiperController = new SwiperController();
+  private readonly featuredCocktailIds: number[] = [8, 9, 10];
 
   private readonly stats: DashboardStat[] = [
     { value: '12', label: '今日建议' },
@@ -297,7 +298,10 @@ export struct MainPage {
     .padding(16)
     .backgroundColor('#FFFFFF')
     .borderRadius(22)
-    .border({ width: 1, color: '#D7E6ED' });
+    .border({ width: 1, color: '#D7E6ED' })
+    .onClick(() => {
+      this.navigateToRecipeDetail(this.getFeaturedCocktailId(index));
+    });
   }
 
   @Builder
@@ -361,7 +365,10 @@ export struct MainPage {
       title.id === $r('app.string.favorite_recipes').id) {
       targetUrl = 'features/favorite/pages/MyFavoritePage';
     } else if (title.id === $r('app.string.material_selection').id) {
-      targetUrl = 'features/cocktail/pages/CocktailPhotoPage';
+      targetUrl = 'features/station/pages/MaterialLibraryPage';
+    } else if (title.id === $r('app.string.classic_formula').id) {
+      this.navigateToRecipeDetail();
+      return;
     } else if (title.id === $r('app.string.ai_cocktail').id) {
       targetUrl = 'features/cocktail/pages/AICocktailPage';
     }
@@ -372,5 +379,21 @@ export struct MainPage {
     }
 
     router.pushUrl({ url: targetUrl }, 3000);
+  }
+
+  private getFeaturedCocktailId(index: number): number {
+    if (index >= 0 && index < this.featuredCocktailIds.length) {
+      return this.featuredCocktailIds[index];
+    }
+    return this.featuredCocktailIds[0];
+  }
+
+  private navigateToRecipeDetail(cocktailId: number = this.featuredCocktailIds[0]): void {
+    router.pushUrl({
+      url: 'features/recipe/pages/RecipeDetailPage',
+      params: {
+        cocktailId
+      }
+    }, 3000);
   }
 }

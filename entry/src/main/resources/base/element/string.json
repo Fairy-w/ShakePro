@@ -452,6 +452,10 @@
     {
       "name": "transition_animation_one_hundred_percent",
       "value": "100%"
+    },
+    {
+      "name": "camera_permission_reason",
+      "value": "需要摄像头权限来拍摄鸡尾酒照片和识别酒标"
     }
 
   ]
