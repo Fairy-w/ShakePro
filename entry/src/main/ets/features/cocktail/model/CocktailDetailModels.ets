@@ -20,6 +20,50 @@ export interface CocktailStepDto {
   detail?: string | null;
 }
 
+export interface CocktailPageQuery {
+  keyword?: string | null;
+  page?: number;
+  size?: number;
+}
+
+export interface CocktailBannerDto {
+  cocktailId: number;
+  imageUrl?: string | null;
+  title?: string | null;
+}
+
+export interface CocktailCategoryDto {
+  name: string;
+  icon?: string | null;
+}
+
+export interface CocktailListItemDto {
+  id: number;
+  name: string;
+  englishName?: string | null;
+  category?: string | null;
+  heroImage?: string | null;
+  difficulty?: string | null;
+  abv?: string | null;
+  imageUrl?: string | null;
+  imageUrlThumb?: string | null;
+  imageUrlCard?: string | null;
+  description?: string | null;
+  alcoholLevel?: number | null;
+}
+
+export interface CocktailPageDto {
+  content?: CocktailListItemDto[];
+  totalElements?: number;
+  totalPages?: number;
+  number?: number;
+  size?: number;
+  first?: boolean;
+  last?: boolean;
+  numberOfElements?: number;
+  empty?: boolean;
+}
+
 export interface CocktailDetailDto {
   id: number;
   name: string;
@@ -35,6 +79,8 @@ export interface CocktailDetailDto {
   description?: string | null;
   story?: string | null;
   imageUrl?: string | null;
+  heroImageCard?: string | null;
+  heroImageDetail?: string | null;
   alcoholLevel?: number | null;
   legacySteps?: string | null;
   flavorTags?: string[];
@@ -44,4 +90,62 @@ export interface CocktailDetailDto {
   steps?: CocktailStepDto[];
   materials?: CocktailMaterialDto[];
   createdAt?: string | null;
+}
+
+function normalizeImageUrl(value?: string | null): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+export function resolveCocktailListImage(item: CocktailListItemDto): string {
+  const candidates: Array<string | null | undefined> = [
+    item.imageUrlThumb,
+    item.imageUrlCard,
+    item.heroImage,
+    item.imageUrl
+  ];
+
+  for (let index: number = 0; index < candidates.length; index += 1) {
+    const candidate = normalizeImageUrl(candidates[index]);
+    if (candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return '';
+}
+
+export function resolveCocktailDetailHeroImage(item: CocktailDetailDto): string {
+  const candidates: Array<string | null | undefined> = [
+    item.heroImageCard,
+    item.heroImageDetail,
+    item.heroImage,
+    item.imageUrl
+  ];
+
+  for (let index: number = 0; index < candidates.length; index += 1) {
+    const candidate = normalizeImageUrl(candidates[index]);
+    if (candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return '';
+}
+
+export function resolveCocktailDetailPreviewImage(item: CocktailDetailDto): string {
+  const candidates: Array<string | null | undefined> = [
+    item.heroImageDetail,
+    item.heroImageCard,
+    item.heroImage,
+    item.imageUrl
+  ];
+
+  for (let index: number = 0; index < candidates.length; index += 1) {
+    const candidate = normalizeImageUrl(candidates[index]);
+    if (candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return '';
 }

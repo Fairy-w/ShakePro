@@ -47,6 +47,7 @@ export interface MaterialRecord {
 
 export interface SelectableMaterial {
   id: string;
+  materialId?: number;
   name: string;
   subtitle: string;
   categoryId: string;
@@ -70,6 +71,7 @@ export interface MaterialDraft {
   brand: string;
   categoryId: string;
   barcode: string;
+  materialId?: number;
   capacityText: string;
   remainLevel: string;
   opened: boolean;
@@ -748,6 +750,7 @@ export function getDraftById(materialId?: string): MaterialDraft {
       brand: draft.brand,
       categoryId: draft.categoryId,
       barcode: draft.barcode,
+      materialId: draft.materialId,
       capacityText: draft.capacityText,
       remainLevel: draft.remainLevel,
       opened: draft.opened,

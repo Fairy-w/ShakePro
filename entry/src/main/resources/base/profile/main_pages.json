@@ -9,7 +9,6 @@
     "features/favorite/pages/MyFavoritePage",
     "features/station/pages/MaterialScannerPage",
     "features/station/pages/MaterialLibraryPage",
-    "features/station/pages/MaterialStagingPage",
     "features/station/pages/MaterialEditorPage",
     "features/cocktail/pages/CocktailPhotoPage",
     "features/profile/pages/ProfilePage"

@@ -1,9 +1,9 @@
 import { TabsConcaveCircle } from '../../../common/components/navigation/TabsConcaveCircle';
 import { TabMenusInterfaceIRequired } from '../../../common/types/TabMenusInterface';
 import { MainPage } from './HomePage';
-import { SecondaryLinkExample } from '../../../legacy/pages/SecondaryLinkExample';
 import { SlideToHideAndDisplaceComponent } from '../../../legacy/pages/SlideToHideAndDisplaceDemo';
 import { BartendingStationPage } from './BartendingStationPage';
+import { RecipeLibraryPage } from '../../recipe/pages/RecipeLibraryPage';
 
 @Entry({ routeName: 'NavigationPage' })
 @Component
@@ -32,7 +32,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.news'),
       tabsFontColor: '#6D7F8B',
       tabsSelectFontColor: '#18323F',
-      pagePath: 'legacy/pages/SecondaryLinkExample'
+      pagePath: 'features/recipe/pages/RecipeLibraryPage'
     },
     {
       text: $r('app.string.custom_tab_mine'),
@@ -55,7 +55,7 @@ export struct NavigationPage {
     } else if (this.currentIndex === 1) {
       BartendingStationPage();
     } else if (this.currentIndex === 2) {
-      SecondaryLinkExample();
+      RecipeLibraryPage();
     } else {
       SlideToHideAndDisplaceComponent();
     }

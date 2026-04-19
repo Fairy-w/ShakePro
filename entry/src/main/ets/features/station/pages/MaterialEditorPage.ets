@@ -1,16 +1,20 @@
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
+import common from '@ohos.app.ability.common';
+import { sessionStore } from '../../../common/storage/SessionStore';
 import {
   MATERIAL_CATEGORIES,
   MaterialCategory,
   MaterialDraft,
   getDraftById
 } from '../model/BartendingStationMockData';
-import { saveMaterialDraft } from '../model/MaterialStationStore';
+import { getRecordedDraftById, removeRecordedMaterialById, saveMaterialDraft } from '../model/MaterialStationStore';
+import { stationMaterialRepository } from '../repository/StationMaterialRepository';
 
 interface EditorRouteParams {
   materialId?: string;
   source?: string;
+  draftJson?: string;
 }
 @Entry
 @Component
@@ -19,6 +23,7 @@ export struct MaterialEditorPage {
   private readonly flavorTags: string[] = ['柑橘', '草本', '甜感', '苦味', '辛香', '气泡', '清新', '经典'];
 
   @State private materialId: string = '';
+  @State private source: string = 'manual';
   @State private sourceLabel: string = '手动录入';
   @State private subtitle: string = '';
   @State private badge: string = 'NM';
@@ -34,15 +39,77 @@ export struct MaterialEditorPage {
   @State private hasItem: boolean = true;
   @State private note: string = '';
   @State private selectedTags: string[] = [];
+  @State private standardMaterialId: number | undefined = undefined;
+  @State private requestBusy: boolean = false;
+  @State private deleteBusy: boolean = false;
 
   aboutToAppear(): void {
     const routeParams: EditorRouteParams = router.getParams() as EditorRouteParams;
-    this.loadDraft(routeParams ? routeParams.materialId : undefined);
+    void this.ensureSessionStore();
+    this.loadDraft(routeParams);
   }
 
-  private loadDraft(materialId?: string): void {
-    const draft: MaterialDraft = getDraftById(materialId);
+  private getHostContext(): common.BaseContext {
+    return this.getUIContext().getHostContext() as common.BaseContext;
+  }
+
+  private async ensureSessionStore(): Promise<void> {
+    if (sessionStore.isInitialized()) {
+      return;
+    }
+
+    try {
+      await sessionStore.init(this.getHostContext());
+    } catch (error) {
+      promptAction.showToast({ message: '服务准备中，请稍后再试' });
+    }
+  }
+
+  private async hasAuthorization(): Promise<boolean> {
+    await this.ensureSessionStore();
+    if (!sessionStore.isInitialized()) {
+      return false;
+    }
+    const authorization = await sessionStore.getAuthorizationValue();
+    return authorization.trim().length > 0;
+  }
+
+  private loadDraft(routeParams?: EditorRouteParams): void {
+    const draft: MaterialDraft = this.resolveRouteDraft(routeParams);
+    this.applyDraft(draft);
+  }
+
+  private resolveRouteDraft(routeParams?: EditorRouteParams): MaterialDraft {
+    const routeDraft = this.parseRouteDraft(routeParams?.draftJson);
+    if (routeDraft !== undefined) {
+      return routeDraft;
+    }
+    const cachedDraft = getRecordedDraftById(routeParams?.materialId);
+    if (cachedDraft !== undefined) {
+      return cachedDraft;
+    }
+    return getDraftById(routeParams?.materialId);
+  }
+
+  private parseRouteDraft(draftJson?: string): MaterialDraft | undefined {
+    if (typeof draftJson !== 'string' || draftJson.trim().length === 0) {
+      return undefined;
+    }
+
+    try {
+      const parsedDraft = JSON.parse(draftJson) as MaterialDraft;
+      if (typeof parsedDraft.id !== 'string' || parsedDraft.id.trim().length === 0) {
+        return undefined;
+      }
+      return parsedDraft;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  private applyDraft(draft: MaterialDraft): void {
     this.materialId = draft.id;
+    this.source = draft.source;
     this.sourceLabel = draft.sourceLabel;
     this.subtitle = draft.subtitle;
     this.badge = draft.badge;
@@ -58,6 +125,7 @@ export struct MaterialEditorPage {
     this.hasItem = draft.hasItem;
     this.note = draft.note;
     this.selectedTags = draft.tags.slice();
+    this.standardMaterialId = draft.materialId;
   }
 
   private isPresenceOnlyCategory(): boolean {
@@ -78,14 +146,11 @@ export struct MaterialEditorPage {
     if (this.isPresenceOnlyCategory()) {
       return '保存有无状态';
     }
-    return '保存到我的材料台';
+    return '保存修改';
   }
 
-  private getDraftActionText(): string {
-    if (this.isPresenceOnlyCategory()) {
-      return '暂不标记';
-    }
-    return '稍后补充';
+  private canDeleteMaterial(): boolean {
+    return this.barcode.trim().length > 0;
   }
 
   private getSaveToastMessage(): string {
@@ -101,13 +166,14 @@ export struct MaterialEditorPage {
   private buildDraftSnapshot(): MaterialDraft {
     return {
       id: this.materialId,
-      source: 'editor',
+      source: this.source,
       sourceLabel: this.sourceLabel,
       name: this.name,
       subtitle: this.subtitle,
       brand: this.brand,
       categoryId: this.categoryId,
       barcode: this.barcode,
+      materialId: this.standardMaterialId,
       capacityText: this.capacityText,
       remainLevel: this.remainLevel,
       opened: this.opened,
@@ -118,6 +184,90 @@ export struct MaterialEditorPage {
       accentColor: this.accentColor,
       softColor: this.softColor
     };
+  }
+
+  private resolveErrorMessage(error: Object, fallbackMessage: string): string {
+    const errorObject = error as Record<string, Object>;
+    const message = errorObject['message'];
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+    return fallbackMessage;
+  }
+
+  private shouldRedirectToLogin(error: Object): boolean {
+    const errorObject = error as Record<string, Object>;
+    const code = errorObject['code'];
+    const statusCode = errorObject['statusCode'];
+    return code === 40100 || statusCode === 401;
+  }
+
+  private navigateToLogin(message: string): void {
+    promptAction.showToast({ message });
+    router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+  }
+
+  private async handleDelete(): Promise<void> {
+    if (this.deleteBusy || this.requestBusy) {
+      return;
+    }
+
+    if (!(await this.hasAuthorization())) {
+      this.navigateToLogin('请先登录后再删除材料');
+      return;
+    }
+
+    if (!this.canDeleteMaterial()) {
+      promptAction.showToast({ message: '当前材料还未保存，无法删除' });
+      return;
+    }
+
+    this.deleteBusy = true;
+    try {
+      await stationMaterialRepository.deleteUserMaterial(this.barcode);
+      removeRecordedMaterialById(this.materialId);
+      promptAction.showToast({ message: this.name + ' 已从材料台移除' });
+      router.back();
+    } catch (error) {
+      const message = this.resolveErrorMessage(error as Object, '删除材料失败，请稍后再试');
+      promptAction.showToast({ message });
+      if (this.shouldRedirectToLogin(error as Object)) {
+        router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+      }
+    } finally {
+      this.deleteBusy = false;
+    }
+  }
+
+  private async handleSave(): Promise<void> {
+    if (this.requestBusy) {
+      return;
+    }
+
+    if (!(await this.hasAuthorization())) {
+      this.navigateToLogin('请先登录后再保存材料');
+      return;
+    }
+
+    this.requestBusy = true;
+    try {
+      const draftSnapshot = this.buildDraftSnapshot();
+      const savedDraft = draftSnapshot.source === 'scan'
+        ? await stationMaterialRepository.saveScannedMaterial(draftSnapshot)
+        : await stationMaterialRepository.saveManualMaterial(draftSnapshot);
+      this.standardMaterialId = savedDraft.materialId;
+      saveMaterialDraft(savedDraft);
+      promptAction.showToast({ message: this.getSaveToastMessage() });
+      router.back();
+    } catch (error) {
+      const message = this.resolveErrorMessage(error as Object, '保存材料失败，请稍后再试');
+      promptAction.showToast({ message });
+      if (this.shouldRedirectToLogin(error as Object)) {
+        router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+      }
+    } finally {
+      this.requestBusy = false;
+    }
   }
 
   @Builder
@@ -140,12 +290,12 @@ export struct MaterialEditorPage {
       });
 
       Column({ space: 4 }) {
-        Text('补充材料信息')
+        Text('快速编辑材料')
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
           .fontColor('#173240');
 
-        Text('只保留必要信息，方便快速完成录入。')
+        Text('优先调整库存状态，其他信息放在下面按需补充。')
           .fontSize(12)
           .fontColor('#72838F');
       }
@@ -368,10 +518,81 @@ export struct MaterialEditorPage {
       });
   }
 
+  private toggleTag(tag: string): void {
+    const nextTags: string[] = [];
+    let existed = false;
+    this.selectedTags.forEach((item: string) => {
+      if (item === tag) {
+        existed = true;
+        return;
+      }
+      nextTags.push(item);
+    });
+    if (!existed) {
+      nextTags.push(tag);
+    }
+    this.selectedTags = nextTags;
+  }
+
   @Builder
-  private buildBasicSection() {
+  private buildQuickInventorySection() {
     Column({ space: 14 }) {
-      this.buildSectionTitle('基本信息', '确认名称、品牌和分类即可，不再要求填写一长串内容。');
+      this.buildSectionTitle('快速状态', '先处理有货、开封和剩余量，这是最常用的库存修改。');
+
+      Column({ space: 10 }) {
+        this.buildFieldLabel('当前状态');
+        Flex({
+          wrap: FlexWrap.Wrap,
+          direction: FlexDirection.Row,
+          justifyContent: FlexAlign.Start
+        }) {
+          this.buildBooleanChip('有货', this.hasItem, () => {
+            this.hasItem = true;
+          });
+          this.buildBooleanChip('缺货', !this.hasItem, () => {
+            this.hasItem = false;
+          });
+          this.buildBooleanChip('已开封', this.opened, () => {
+            this.opened = true;
+          });
+          this.buildBooleanChip('未开封', !this.opened, () => {
+            this.opened = false;
+          });
+        }
+        .width('100%');
+      }
+      .width('100%');
+
+      this.buildInputCard('容量 / 数量', this.capacityText, '例如 700ml / 6 瓶 / 4 只', (value: string) => {
+        this.capacityText = value;
+      });
+
+      Column({ space: 10 }) {
+        this.buildFieldLabel('剩余量');
+        Flex({
+          wrap: FlexWrap.Wrap,
+          direction: FlexDirection.Row,
+          justifyContent: FlexAlign.Start
+        }) {
+          ForEach(this.remainOptions, (item: string) => {
+            this.buildRemainChip(item);
+          });
+        }
+        .width('100%');
+      }
+      .width('100%');
+    }
+    .width('100%')
+    .padding(18)
+    .backgroundColor('#FFFFFF')
+    .borderRadius(24)
+    .border({ width: 1, color: '#D7E6ED' });
+  }
+
+  @Builder
+  private buildSupplementSection() {
+    Column({ space: 14 }) {
+      this.buildSectionTitle('补充信息', '只在需要时补充品牌、分类和风味标签，不强制一次填完。');
       this.buildInputCard('材料名称', this.name, '例如 亨利爵士金酒', (value: string) => {
         this.name = value;
       });
@@ -401,40 +622,60 @@ export struct MaterialEditorPage {
   }
 
   @Builder
-  private buildInventorySection() {
-    Column({ space: 14 }) {
-      this.buildSectionTitle('库存信息', '库存也只保留两项：容量和大致剩余量。');
-      this.buildInputCard('容量 / 数量', this.capacityText, '例如 700ml / 6 瓶 / 4 只', (value: string) => {
-        this.capacityText = value;
-      });
-      Column({ space: 10 }) {
-        this.buildFieldLabel('剩余量');
-        Flex({
-          wrap: FlexWrap.Wrap,
-          direction: FlexDirection.Row,
-          justifyContent: FlexAlign.Start
-        }) {
-          ForEach(this.remainOptions, (item: string) => {
-            this.buildRemainChip(item);
+  private buildBottomBar() {
+    Column({ space: 10 }) {
+      if (this.canDeleteMaterial()) {
+        Button(this.deleteBusy ? '删除中...' : '删除材料', { type: ButtonType.Capsule })
+          .width('100%')
+          .height(44)
+          .fontSize(13)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#B42318')
+          .backgroundColor('#FDECEC')
+          .enabled(!this.requestBusy && !this.deleteBusy)
+          .onClick(() => {
+            void this.handleDelete();
           });
-        }
-        .width('100%');
+      }
+
+      Row({ space: 10 }) {
+        Button('取消', { type: ButtonType.Capsule })
+          .width(96)
+          .height(50)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#5A7180')
+          .backgroundColor('#EEF5F8')
+          .enabled(!this.requestBusy && !this.deleteBusy)
+          .onClick(() => {
+            router.back();
+          });
+
+        Button(this.requestBusy ? '保存中...' : this.getPrimaryActionText(), { type: ButtonType.Capsule })
+          .layoutWeight(1)
+          .height(50)
+          .fontSize(16)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FFFFFF')
+          .backgroundColor(this.accentColor)
+          .enabled(!this.requestBusy && !this.deleteBusy)
+          .onClick(() => {
+            void this.handleSave();
+          });
       }
       .width('100%');
     }
     .width('100%')
-    .padding(18)
-    .backgroundColor('#FFFFFF')
-    .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
+    .padding({ left: 16, right: 16, top: 12, bottom: 18 })
+    .backgroundColor('#F4F8FB');
   }
 
   @Builder
-  private buildFlavorSection() {
+  private buildTagSection() {
     Column({ space: 14 }) {
-      this.buildSectionTitle('使用信息', '风味标签和备注会影响后续的推荐与整理。');
+      this.buildSectionTitle('风味标签', '仅在你想优化后续推荐时再补充。');
       Column({ space: 10 }) {
-        this.buildFieldLabel('风味标签');
+        this.buildFieldLabel('已选标签');
         Flex({
           wrap: FlexWrap.Wrap,
           direction: FlexDirection.Row,
@@ -459,47 +700,6 @@ export struct MaterialEditorPage {
     .border({ width: 1, color: '#D7E6ED' });
   }
 
-  @Builder
-  private buildBottomBar() {
-    Row({ space: 10 }) {
-      Button(this.getDraftActionText(), { type: ButtonType.Capsule })
-        .width(120)
-        .height(50)
-        .fontSize(14)
-        .fontWeight(FontWeight.Medium)
-        .fontColor('#5A7180')
-        .backgroundColor('#EEF5F8')
-        .onClick(() => {
-          promptAction.showToast({ message: this.isPresenceOnlyCategory() ? '暂未修改该状态（前端演示）' : '已保留草稿状态（前端演示）' });
-          router.back();
-        });
-
-      Button(this.getPrimaryActionText(), { type: ButtonType.Capsule })
-        .layoutWeight(1)
-        .height(50)
-        .fontSize(16)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#FFFFFF')
-        .backgroundColor(this.accentColor)
-        .onClick(() => {
-          saveMaterialDraft(this.buildDraftSnapshot());
-          promptAction.showToast({ message: this.getSaveToastMessage() });
-          router.back();
-        });
-    }
-    .width('100%')
-    .padding({ left: 16, right: 16, top: 12, bottom: 18 })
-    .backgroundColor('#F4F8FB');
-  }
-
-  private toggleTag(tag: string): void {
-    if (this.selectedTags.indexOf(tag) !== -1) {
-      this.selectedTags = this.selectedTags.filter((item: string): boolean => item !== tag);
-      return;
-    }
-    this.selectedTags = this.selectedTags.concat([tag]);
-  }
-
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       Scroll() {
@@ -509,12 +709,13 @@ export struct MaterialEditorPage {
           if (this.isPresenceOnlyCategory()) {
             this.buildPresenceOnlySection();
           } else {
-            this.buildBasicSection();
-            this.buildInventorySection();
+            this.buildQuickInventorySection();
+            this.buildSupplementSection();
+            this.buildTagSection();
           }
         }
         .width('100%')
-        .padding({ left: 16, right: 16, top: 20, bottom: 120 });
+        .padding({ left: 16, right: 16, top: 20, bottom: 148 });
       }
       .width('100%')
       .height('100%')

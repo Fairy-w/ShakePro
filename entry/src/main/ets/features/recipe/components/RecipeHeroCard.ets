@@ -3,6 +3,8 @@ import { EMPTY_SYSTEM_RECIPE, SystemRecipe, resolveRecipeHeroImage } from '../mo
 @Component
 export struct RecipeHeroCard {
   @Prop recipe: SystemRecipe = EMPTY_SYSTEM_RECIPE;
+  @Prop canPreview: boolean = false;
+  onPreviewImage: () => void = () => {};
 
   @Builder
   private buildTag(text: string) {
@@ -64,6 +66,10 @@ export struct RecipeHeroCard {
               .padding({ left: 12, right: 12, top: 8, bottom: 8 })
               .backgroundColor('#E7CDA7')
               .borderRadius(16);
+
+            if (this.canPreview) {
+              Blank().layoutWeight(1);
+            }
           }
           .width('100%');
 
@@ -115,6 +121,11 @@ export struct RecipeHeroCard {
     .width('100%')
     .borderRadius(32)
     .border({ width: 1, color: '#F0DEC5' })
-    .shadow({ radius: 20, color: '#A27A3A16', offsetX: 0, offsetY: 12 });
+    .shadow({ radius: 20, color: '#A27A3A16', offsetX: 0, offsetY: 12 })
+    .onClick(() => {
+      if (this.canPreview) {
+        this.onPreviewImage();
+      }
+    });
   }
 }
