@@ -1,4 +1,4 @@
-import { buildApiUrl, isAbsoluteUrl } from '../../../common/constants/ApiConfig';
+import { buildPublicAssetUrl } from '../../../common/constants/ApiConfig';
 
 export interface FlavorMetric {
   label: string;
@@ -25,6 +25,7 @@ export interface SystemRecipe {
   category: string;
   subtitle: string;
   heroImage: RecipeImageSource;
+  heroDetailImage: RecipeImageSource;
   highlight: string;
   description: string;
   story: string;
@@ -47,6 +48,7 @@ export const EMPTY_SYSTEM_RECIPE: SystemRecipe = {
   category: '',
   subtitle: '',
   heroImage: '',
+  heroDetailImage: '',
   highlight: '',
   description: '',
   story: '',
@@ -67,15 +69,7 @@ export function resolveRecipeHeroImage(heroImage: RecipeImageSource): RecipeImag
     return heroImage;
   }
 
-  if (isAbsoluteUrl(heroImage)) {
-    return heroImage;
-  }
-
-  if (heroImage.startsWith('/')) {
-    return buildApiUrl(heroImage);
-  }
-
-  return heroImage;
+  return buildPublicAssetUrl(heroImage);
 }
 
 export function getFlavorMetricList(flavorMetrics: FlavorMetric[]): FlavorMetric[] {

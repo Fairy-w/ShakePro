@@ -1,263 +1,185 @@
 import {
-  LIBRARY_ITEMS,
-  PENDING_MATERIALS,
-  RECORDED_MATERIALS,
   MaterialDraft,
   MaterialRecord,
-  SelectableMaterial,
-  getDraftById
+  SelectableMaterial
 } from './BartendingStationMockData';
+import { getMaterialVisualMeta, normalizeCategoryId, normalizeString } from './StationMaterialApiModels';
 
-let stagingMaterialIdsState: string[] = [];
-let recordedMaterialsState: MaterialRecord[] = RECORDED_MATERIALS.map((item: MaterialRecord): MaterialRecord => cloneMaterialRecord(item));
+let stagingMaterialsState: SelectableMaterial[] = [];
+let recordedDraftsState: MaterialDraft[] = [];
 
-function cloneMaterialRecord(item: MaterialRecord): MaterialRecord {
+function cloneMaterialDraft(draft: MaterialDraft): MaterialDraft {
+  return {
+    id: draft.id,
+    source: draft.source,
+    sourceLabel: draft.sourceLabel,
+    name: draft.name,
+    subtitle: draft.subtitle,
+    brand: draft.brand,
+    categoryId: draft.categoryId,
+    barcode: draft.barcode,
+    materialId: draft.materialId,
+    capacityText: draft.capacityText,
+    remainLevel: draft.remainLevel,
+    opened: draft.opened,
+    hasItem: draft.hasItem,
+    tags: draft.tags.slice(),
+    note: draft.note,
+    badge: draft.badge,
+    accentColor: draft.accentColor,
+    softColor: draft.softColor
+  };
+}
+
+function cloneSelectableMaterial(item: SelectableMaterial): SelectableMaterial {
   return {
     id: item.id,
+    materialId: item.materialId,
     name: item.name,
     subtitle: item.subtitle,
     categoryId: item.categoryId,
     categoryName: item.categoryName,
-    amountText: item.amountText,
-    statusText: item.statusText,
-    needsCompletion: item.needsCompletion,
+    quickNote: item.quickNote,
     badge: item.badge,
     accentColor: item.accentColor,
     softColor: item.softColor,
-    tags: item.tags.slice()
+    tags: item.tags.slice(),
+    isCommon: item.isCommon,
+    isRecent: item.isRecent,
+    isRecommended: item.isRecommended
   };
 }
 
-function getSelectableMaterialById(materialId: string): SelectableMaterial | undefined {
-  return LIBRARY_ITEMS.find((item: SelectableMaterial): boolean => item.id === materialId);
-}
-
-function getVisualSourceMaterial(materialId: string): MaterialRecord | undefined {
-  return recordedMaterialsState.find((item: MaterialRecord): boolean => item.id === materialId) ||
-    RECORDED_MATERIALS.find((item: MaterialRecord): boolean => item.id === materialId) ||
-    PENDING_MATERIALS.find((item: MaterialRecord): boolean => item.id === materialId);
-}
-
-function getCategoryName(categoryId: string, materialId: string): string {
-  const visualMaterial: MaterialRecord | undefined = getVisualSourceMaterial(materialId);
-  if (visualMaterial) {
-    return visualMaterial.categoryName;
-  }
-
-  const selectableMaterial: SelectableMaterial | undefined = getSelectableMaterialById(materialId);
-  if (selectableMaterial) {
-    return selectableMaterial.categoryName;
-  }
-
-  if (categoryId === 'spirit') {
-    return '基酒';
-  }
-  if (categoryId === 'liqueur') {
-    return '风味酒';
-  }
-  if (categoryId === 'mixer') {
-    return '软饮 / 糖浆';
-  }
-  if (categoryId === 'fruit') {
-    return '水果';
-  }
-  if (categoryId === 'glassware') {
-    return '杯具';
-  }
-  return '材料';
-}
-
-function getBadge(materialId: string, fallbackBadge: string): string {
-  const visualMaterial: MaterialRecord | undefined = getVisualSourceMaterial(materialId);
-  if (visualMaterial) {
-    return visualMaterial.badge;
-  }
-
-  const selectableMaterial: SelectableMaterial | undefined = getSelectableMaterialById(materialId);
-  if (selectableMaterial) {
-    return selectableMaterial.badge;
-  }
-  return fallbackBadge;
-}
-
-function getAccentColor(materialId: string, fallbackColor: string): string {
-  const visualMaterial: MaterialRecord | undefined = getVisualSourceMaterial(materialId);
-  if (visualMaterial) {
-    return visualMaterial.accentColor;
-  }
-
-  const selectableMaterial: SelectableMaterial | undefined = getSelectableMaterialById(materialId);
-  if (selectableMaterial) {
-    return selectableMaterial.accentColor;
-  }
-  return fallbackColor;
-}
-
-function getSoftColor(materialId: string, fallbackColor: string): string {
-  const visualMaterial: MaterialRecord | undefined = getVisualSourceMaterial(materialId);
-  if (visualMaterial) {
-    return visualMaterial.softColor;
-  }
-
-  const selectableMaterial: SelectableMaterial | undefined = getSelectableMaterialById(materialId);
-  if (selectableMaterial) {
-    return selectableMaterial.softColor;
-  }
-  return fallbackColor;
-}
-
 function shouldNeedsCompletion(draft: MaterialDraft): boolean {
-  if (draft.categoryId === 'fruit' || draft.categoryId === 'glassware') {
+  const normalizedCategoryId = normalizeCategoryId(draft.categoryId);
+  if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
     return false;
   }
   if (!draft.hasItem) {
     return false;
   }
-  if (draft.capacityText.length === 0 || draft.capacityText === '-') {
+  if (normalizeString(draft.capacityText, '').length === 0) {
     return true;
   }
-  if (draft.tags.length === 0) {
-    return true;
-  }
-  return false;
+  return draft.tags.length === 0;
 }
 
 function buildAmountText(draft: MaterialDraft): string {
-  if (draft.categoryId === 'fruit' || draft.categoryId === 'glassware') {
+  const normalizedCategoryId = normalizeCategoryId(draft.categoryId);
+  if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
     return draft.hasItem ? '已标记为有' : '已标记为没有';
   }
-  if (draft.capacityText.length > 0 && draft.capacityText !== '-') {
-    return draft.capacityText + ' · ' + draft.remainLevel;
+
+  const capacityText = normalizeString(draft.capacityText, '');
+  if (capacityText.length > 0) {
+    return `${capacityText} · ${normalizeString(draft.remainLevel, '满瓶')}`;
   }
-  if (draft.remainLevel.length > 0) {
-    return draft.remainLevel;
-  }
-  return '信息待补充';
+  return normalizeString(draft.remainLevel, '信息待补充');
 }
 
 function buildSubtitle(draft: MaterialDraft): string {
-  if (draft.categoryId === 'fruit' || draft.categoryId === 'glassware') {
-    if (draft.hasItem) {
-      return '已按有无状态记录，可在材料清单中随时修改。';
-    }
-    return '已标记为没有，当前不会参与配方匹配。';
+  const normalizedCategoryId = normalizeCategoryId(draft.categoryId);
+  if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
+    return draft.hasItem ? '已按有无状态记录，可随时修改。' : '已标记为没有，当前不会参与配方匹配。';
   }
+
+  if (!draft.hasItem) {
+    return '当前已标记为缺货，可在编辑页重新恢复。';
+  }
+
   if (shouldNeedsCompletion(draft)) {
-    return '已加入我的材料，仍可点开补充库存或风味信息。';
+    return '已加入我的材料，仍可继续补充库存或风味信息。';
   }
+
   return '已加入我的材料，可直接参与当前配方匹配。';
 }
 
 function createMaterialRecordFromDraft(draft: MaterialDraft): MaterialRecord {
+  const visualMeta = getMaterialVisualMeta(draft.categoryId);
   return {
     id: draft.id,
     name: draft.name,
     subtitle: buildSubtitle(draft),
-    categoryId: draft.categoryId,
-    categoryName: getCategoryName(draft.categoryId, draft.id),
+    categoryId: visualMeta.categoryId,
+    categoryName: visualMeta.categoryName,
     amountText: buildAmountText(draft),
-    statusText: shouldNeedsCompletion(draft) ? '待补全' : '已补全',
+    statusText: shouldNeedsCompletion(draft) ? '待补全' : (draft.hasItem ? '已补全' : '缺货'),
     needsCompletion: shouldNeedsCompletion(draft),
-    badge: getBadge(draft.id, draft.badge),
-    accentColor: getAccentColor(draft.id, draft.accentColor),
-    softColor: getSoftColor(draft.id, draft.softColor),
+    badge: normalizeString(draft.badge, visualMeta.badge),
+    accentColor: normalizeString(draft.accentColor, visualMeta.accentColor),
+    softColor: normalizeString(draft.softColor, visualMeta.softColor),
     tags: draft.tags.slice()
   };
 }
 
-function createMaterialRecordFromSelectableMaterial(item: SelectableMaterial): MaterialRecord {
-  return {
-    id: item.id,
-    name: item.name,
-    subtitle: item.categoryId === 'mixer' ? '已从待入台清单加入，可点开补充库存信息。' : '已从待入台清单加入，当前可直接参与配方匹配。',
-    categoryId: item.categoryId,
-    categoryName: item.categoryName,
-    amountText: item.categoryId === 'mixer' ? '信息待补充' : '已标记为有',
-    statusText: item.categoryId === 'mixer' ? '待补全' : '已收录',
-    needsCompletion: item.categoryId === 'mixer',
-    badge: item.badge,
-    accentColor: item.accentColor,
-    softColor: item.softColor,
-    tags: item.tags.slice()
-  };
+export function setRecordedMaterialDrafts(drafts: MaterialDraft[]): void {
+  recordedDraftsState = drafts.map((item: MaterialDraft): MaterialDraft => cloneMaterialDraft(item));
+}
+
+export function getRecordedMaterialDrafts(): MaterialDraft[] {
+  return recordedDraftsState.map((item: MaterialDraft): MaterialDraft => cloneMaterialDraft(item));
+}
+
+export function getRecordedDraftById(materialId?: string): MaterialDraft | undefined {
+  if (typeof materialId !== 'string' || materialId.length === 0) {
+    return undefined;
+  }
+  const matchedDraft = recordedDraftsState.find((item: MaterialDraft): boolean => item.id === materialId);
+  if (!matchedDraft) {
+    return undefined;
+  }
+  return cloneMaterialDraft(matchedDraft);
 }
 
 export function getStagingMaterialIds(): string[] {
-  return stagingMaterialIdsState.slice();
+  return stagingMaterialsState.map((item: SelectableMaterial): string => item.id);
 }
 
 export function getStagingMaterials(): SelectableMaterial[] {
-  const selectedMaterials: SelectableMaterial[] = [];
-  stagingMaterialIdsState.forEach((materialId: string) => {
-    const selectableMaterial: SelectableMaterial | undefined = getSelectableMaterialById(materialId);
-    if (selectableMaterial) {
-      selectedMaterials.push(selectableMaterial);
-    }
-  });
-  return selectedMaterials;
+  return stagingMaterialsState.map((item: SelectableMaterial): SelectableMaterial => cloneSelectableMaterial(item));
 }
 
 export function isInStagingList(materialId: string): boolean {
-  return stagingMaterialIdsState.indexOf(materialId) !== -1;
+  return stagingMaterialsState.some((item: SelectableMaterial): boolean => item.id === materialId);
 }
 
-export function toggleStagingMaterial(materialId: string): void {
-  if (isInStagingList(materialId)) {
-    removeFromStagingMaterials(materialId);
+export function toggleStagingMaterial(item: SelectableMaterial): void {
+  if (isInStagingList(item.id)) {
+    removeFromStagingMaterials(item.id);
     return;
   }
-  stagingMaterialIdsState = stagingMaterialIdsState.concat([materialId]);
+  stagingMaterialsState = stagingMaterialsState.concat([cloneSelectableMaterial(item)]);
 }
 
 export function removeFromStagingMaterials(materialId: string): void {
-  stagingMaterialIdsState = stagingMaterialIdsState.filter((itemId: string): boolean => itemId !== materialId);
+  stagingMaterialsState = stagingMaterialsState.filter((item: SelectableMaterial): boolean => item.id !== materialId);
 }
 
 export function clearStagingMaterials(): void {
-  stagingMaterialIdsState = [];
+  stagingMaterialsState = [];
 }
 
 export function getRecordedMaterials(): MaterialRecord[] {
-  return recordedMaterialsState.map((item: MaterialRecord): MaterialRecord => cloneMaterialRecord(item));
+  return recordedDraftsState
+    .map((item: MaterialDraft): MaterialRecord => createMaterialRecordFromDraft(item))
+    .slice();
 }
 
-export function upsertRecordedMaterial(record: MaterialRecord): void {
-  const clonedRecord: MaterialRecord = cloneMaterialRecord(record);
-  const existingIndex: number = recordedMaterialsState.findIndex((item: MaterialRecord): boolean => item.id === clonedRecord.id);
+export function upsertRecordedMaterialDraft(draft: MaterialDraft): void {
+  const clonedDraft: MaterialDraft = cloneMaterialDraft(draft);
+  const existingIndex = recordedDraftsState.findIndex((item: MaterialDraft): boolean => item.id === clonedDraft.id);
   if (existingIndex === -1) {
-    recordedMaterialsState = recordedMaterialsState.concat([clonedRecord]);
+    recordedDraftsState = [clonedDraft].concat(recordedDraftsState);
     return;
   }
-  recordedMaterialsState[existingIndex] = clonedRecord;
-  recordedMaterialsState = recordedMaterialsState.slice();
+  recordedDraftsState[existingIndex] = clonedDraft;
+  recordedDraftsState = recordedDraftsState.slice();
 }
 
-export function removeRecordedMaterial(materialId: string): void {
-  recordedMaterialsState = recordedMaterialsState.filter((item: MaterialRecord): boolean => item.id !== materialId);
-}
-
-export function directIntakeScannedMaterial(materialId: string): void {
-  const pendingMaterial: MaterialRecord | undefined = PENDING_MATERIALS.find((item: MaterialRecord): boolean => item.id === materialId);
-  if (pendingMaterial) {
-    upsertRecordedMaterial(pendingMaterial);
-    return;
-  }
-  saveMaterialDraft(getDraftById(materialId));
+export function removeRecordedMaterialById(materialId: string): void {
+  recordedDraftsState = recordedDraftsState.filter((item: MaterialDraft): boolean => item.id !== materialId);
 }
 
 export function saveMaterialDraft(draft: MaterialDraft): void {
-  if ((draft.categoryId === 'fruit' || draft.categoryId === 'glassware') && !draft.hasItem) {
-    removeRecordedMaterial(draft.id);
-    return;
-  }
-  upsertRecordedMaterial(createMaterialRecordFromDraft(draft));
-}
-
-export function confirmStagingMaterials(): number {
-  const stagingMaterials: SelectableMaterial[] = getStagingMaterials();
-  stagingMaterials.forEach((item: SelectableMaterial) => {
-    upsertRecordedMaterial(createMaterialRecordFromSelectableMaterial(item));
-  });
-  clearStagingMaterials();
-  return stagingMaterials.length;
+  upsertRecordedMaterialDraft(draft);
 }

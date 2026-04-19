@@ -1,4 +1,6 @@
-export const API_BASE_URL: string = 'http://172.25.12.162:8080';
+export const API_BASE_URL: string = 'http://172.20.10.3:8080';
+// 手机热点： 172.20.10.3
+// CDU：10.7.123.71
 export const API_TIMEOUT_MS: number = 10000;
 export const API_FALLBACK_TIMEOUT_MS: number = 2500;
 export const API_MAX_RETRY_COUNT: number = 0;
@@ -6,6 +8,7 @@ export const API_BASE_URL_CANDIDATES: string[] = [
   API_BASE_URL,
   'http://api.shakepro.local:8080'
 ];
+export const OSS_PUBLIC_BASE_URL: string = '';
 
 export const DEFAULT_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
@@ -18,23 +21,61 @@ export const AUTH_ME_PATH: string = '/api/me';
 export const AI_GENERATE_RECIPE_PATH: string = '/api/ai/generate-recipe';
 export const AI_GENERATE_RECIPE_BY_TEXT_PATH: string = '/api/ai/generate-recipe-by-text';
 export const COCKTAILS_PATH: string = '/api/cocktails';
+export const OSS_PRESIGN_PATH: string = '/api/oss/presign';
+export const FILES_PATH: string = '/api/files';
 export const FAVORITE_AI_COCKTAILS_PATH: string = '/api/favorites/ai-cocktails';
 export const FAVORITE_AI_COCKTAIL_STATUS_PATH: string = '/api/favorites/ai-cocktails/status';
+export const BARCODE_LOOKUP_PATH: string = '/api/barcodes/lookup';
+export const MATERIALS_PATH: string = '/api/materials';
+export const MATERIAL_CATEGORIES_PATH: string = '/api/materials/categories';
+export const USER_MATERIALS_PATH: string = '/api/user-materials';
+export const USER_MATERIALS_MANUAL_PATH: string = '/api/user-materials/manual';
+export const USER_MATERIALS_MANUAL_BATCH_PATH: string = '/api/user-materials/manual/batch';
 
 export function isAbsoluteUrl(path: string): boolean {
-  return path.startsWith('http://') || path.startsWith('https://');
+  return path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//');
+}
+
+export function normalizeAbsoluteUrl(path: string): string {
+  if (path.startsWith('//')) {
+    return `https:${path}`;
+  }
+  return path;
 }
 
 export function buildApiUrl(path: string): string {
   if (isAbsoluteUrl(path)) {
-    return path;
+    return normalizeAbsoluteUrl(path);
   }
   return `${API_BASE_URL}${path}`;
 }
 
 export function buildApiUrlWithBase(baseUrl: string, path: string): string {
   if (isAbsoluteUrl(path)) {
-    return path;
+    return normalizeAbsoluteUrl(path);
   }
   return `${baseUrl}${path}`;
+}
+
+export function buildPublicAssetUrl(path: string): string {
+  const trimmedPath = path.trim();
+  if (trimmedPath.length === 0) {
+    return trimmedPath;
+  }
+
+  if (isAbsoluteUrl(trimmedPath)) {
+    return normalizeAbsoluteUrl(trimmedPath);
+  }
+
+  if (trimmedPath.startsWith('/')) {
+    return buildApiUrl(trimmedPath);
+  }
+
+  if (OSS_PUBLIC_BASE_URL.length > 0) {
+    const normalizedBase = OSS_PUBLIC_BASE_URL.endsWith('/') ? OSS_PUBLIC_BASE_URL.slice(0, -1) : OSS_PUBLIC_BASE_URL;
+    const normalizedPath = trimmedPath.startsWith('/') ? trimmedPath.slice(1) : trimmedPath;
+    return `${normalizedBase}/${normalizedPath}`;
+  }
+
+  return trimmedPath;
 }

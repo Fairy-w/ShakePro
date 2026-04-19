@@ -9,7 +9,9 @@ import {
   CocktailDetailDto,
   CocktailFlavorMetricDto,
   CocktailMaterialDto,
-  CocktailStepDto
+  CocktailStepDto,
+  resolveCocktailDetailHeroImage,
+  resolveCocktailDetailPreviewImage
 } from '../../cocktail/model/CocktailDetailModels';
 
 function toSafeString(value?: string | null): string {
@@ -95,14 +97,6 @@ function buildFlavorMetrics(flavorMetrics?: CocktailFlavorMetricDto[]): FlavorMe
     .filter((item: FlavorMetric): boolean => item.label.length > 0);
 }
 
-function resolveHeroImage(dto: CocktailDetailDto): string {
-  const heroImage = toSafeString(dto.heroImage);
-  if (heroImage.length > 0) {
-    return heroImage;
-  }
-  return toSafeString(dto.imageUrl);
-}
-
 export function mapCocktailDetailToSystemRecipe(dto: CocktailDetailDto): SystemRecipe {
   return {
     id: String(dto.id),
@@ -110,7 +104,8 @@ export function mapCocktailDetailToSystemRecipe(dto: CocktailDetailDto): SystemR
     englishName: toSafeString(dto.englishName),
     category: toSafeString(dto.category),
     subtitle: toSafeString(dto.subtitle),
-    heroImage: resolveHeroImage(dto),
+    heroImage: resolveCocktailDetailHeroImage(dto),
+    heroDetailImage: resolveCocktailDetailPreviewImage(dto),
     highlight: toSafeString(dto.highlight),
     description: toSafeString(dto.description),
     story: toSafeString(dto.story),

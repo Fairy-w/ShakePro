@@ -10,7 +10,13 @@ import { RecipeServeSection } from '../components/RecipeServeSection';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { cocktailRepository } from '../../cocktail/repository/CocktailRepository';
 import { mapCocktailDetailToSystemRecipe } from '../model/RecipeDetailMapper';
-import { EMPTY_SYSTEM_RECIPE, RecipeIngredient, RecipeStep, SystemRecipe } from '../model/SystemRecipeData';
+import {
+  EMPTY_SYSTEM_RECIPE,
+  RecipeIngredient,
+  RecipeStep,
+  SystemRecipe,
+  resolveRecipeHeroImage
+} from '../model/SystemRecipeData';
 
 interface RecipeRouteParams {
   cocktailId?: string | number;
@@ -25,6 +31,7 @@ export struct RecipeDetailPage {
   @State private errorMessage: string = '';
   @State private traceId: string = '';
   @State private isMinimalView: boolean = false;
+  @State private isPhotoPreviewVisible: boolean = false;
   @State private bookmarkedRecipeIds: string[] = [];
 
   aboutToAppear(): void {
@@ -100,6 +107,7 @@ export struct RecipeDetailPage {
     this.isLoading = true;
     this.errorMessage = '';
     this.traceId = '';
+    this.isPhotoPreviewVisible = false;
 
     if (!routeCocktailId || !this.isNumericId(routeCocktailId)) {
       this.isLoading = false;
@@ -142,6 +150,25 @@ export struct RecipeDetailPage {
   private toggleMinimalView(): void {
     this.isMinimalView = !this.isMinimalView;
     promptAction.showToast({ message: this.isMinimalView ? '已切换到极简视图' : '已恢复完整视图' });
+  }
+
+  private hasPreviewImage(): boolean {
+    if (typeof this.recipe.heroDetailImage !== 'string') {
+      return false;
+    }
+    return this.recipe.heroDetailImage.trim().length > 0;
+  }
+
+  private openPhotoPreview(): void {
+    if (!this.hasPreviewImage()) {
+      promptAction.showToast({ message: '当前没有可查看的高清图' });
+      return;
+    }
+    this.isPhotoPreviewVisible = true;
+  }
+
+  private closePhotoPreview(): void {
+    this.isPhotoPreviewVisible = false;
   }
 
   @Builder
@@ -287,6 +314,8 @@ export struct RecipeDetailPage {
         .fontSize(13)
         .fontColor('#6E5D4E')
         .lineHeight(20);
+
+
     }
     .width('100%')
     .alignItems(HorizontalAlign.Start)
@@ -448,6 +477,87 @@ export struct RecipeDetailPage {
     .width('100%');
   }
 
+  @Builder
+  private buildPhotoPreviewOverlay() {
+    Stack({ alignContent: Alignment.TopStart }) {
+      Column()
+        .width('100%')
+        .height('100%')
+        .backgroundColor('#000000')
+        .onClick(() => {
+          this.closePhotoPreview();
+        });
+
+      Column({ space: 16 }) {
+        Row() {
+          Column({ space: 4 }) {
+            Text(this.recipe.name)
+              .fontSize(22)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#FFF8EE')
+              .maxLines(2);
+
+            Text('高清预览，轻触空白处即可关闭')
+              .fontSize(12)
+              .fontColor('#D7C6B4');
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start);
+
+          Button('关闭')
+            .height(38)
+            .fontSize(13)
+            .fontWeight(FontWeight.Medium)
+            .fontColor('#201712')
+            .backgroundColor('#F1D6B2')
+            .borderRadius(16)
+            .padding({ left: 14, right: 14 })
+            .onClick(() => {
+              this.closePhotoPreview();
+            });
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Top);
+
+        Image(resolveRecipeHeroImage(this.recipe.heroDetailImage))
+          .width('100%')
+          .layoutWeight(1)
+          .objectFit(ImageFit.Contain)
+          .borderRadius(28)
+          .onClick(() => {
+          });
+
+        if (this.recipe.englishName.length > 0 || this.recipe.category.length > 0) {
+          Row({ space: 8 }) {
+            if (this.recipe.category.length > 0) {
+              Text(this.recipe.category)
+                .fontSize(11)
+                .fontColor('#FFF5E8')
+                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                .backgroundColor('#2A221D')
+                .borderRadius(14);
+            }
+
+            if (this.recipe.englishName.length > 0) {
+              Text(this.recipe.englishName)
+                .fontSize(11)
+                .fontColor('#E5D5C5')
+                .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+                .backgroundColor('#201A16')
+                .borderRadius(14);
+            }
+          }
+          .width('100%');
+        }
+      }
+      .width('100%')
+      .height('100%')
+      .padding({ left: 16, right: 16, top: 28, bottom: 28 });
+    }
+    .width('100%')
+    .height('100%');
+  }
+
   build() {
     Stack() {
       Column()
@@ -500,7 +610,13 @@ export struct RecipeDetailPage {
             if (this.isMinimalView) {
               this.buildMinimalContent();
             } else {
-              RecipeHeroCard({ recipe: this.recipe });
+              RecipeHeroCard({
+                recipe: this.recipe,
+                canPreview: this.hasPreviewImage(),
+                onPreviewImage: () => {
+                  this.openPhotoPreview();
+                }
+              });
               RecipeOverviewSection({ recipe: this.recipe });
               RecipeFlavorSection({ recipe: this.recipe });
               RecipeProductionCapsule({ recipe: this.recipe });
@@ -514,6 +630,10 @@ export struct RecipeDetailPage {
       .width('100%')
       .height('100%')
       .scrollBar(BarState.Off);
+
+      if (this.isPhotoPreviewVisible) {
+        this.buildPhotoPreviewOverlay();
+      }
     }
     .width('100%')
     .height('100%');

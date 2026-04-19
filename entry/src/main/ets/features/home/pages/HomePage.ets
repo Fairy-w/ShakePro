@@ -1,11 +1,22 @@
 import promptAction from '@ohos.promptAction';
+import common from '@ohos.app.ability.common';
 import ItemData from '../model/ItemData';
 import MainViewModel from '../viewmodel/MainViewModel';
 import router from '@ohos.router';
+import { buildPublicAssetUrl } from '../../../common/constants/ApiConfig';
+import { sessionStore } from '../../../common/storage/SessionStore';
+import { cocktailRepository } from '../../cocktail/repository/CocktailRepository';
+import { CocktailBannerDto } from '../../cocktail/model/CocktailDetailModels';
 
 interface DashboardStat {
   value: string;
   label: string;
+}
+
+interface HomeBannerItem {
+  cocktailId: number;
+  title: string;
+  imageUrl: string;
 }
 
 @Entry({ routeName: 'MainPage' })
@@ -13,12 +24,95 @@ interface DashboardStat {
 export struct MainPage {
   private swiperController: SwiperController = new SwiperController();
   private readonly featuredCocktailIds: number[] = [8, 9, 10];
+  @State private heroBanners: HomeBannerItem[] = [];
 
   private readonly stats: DashboardStat[] = [
     { value: '12', label: '今日建议' },
     { value: '84%', label: '库存匹配' },
     { value: '3.2m', label: '平均出杯' }
   ];
+
+  aboutToAppear(): void {
+    if (this.heroBanners.length === 0) {
+      void this.refreshHeroBanners();
+    }
+  }
+
+  private getHostContext(): common.BaseContext {
+    return this.getUIContext().getHostContext() as common.BaseContext;
+  }
+
+  private async ensureSessionStore(): Promise<void> {
+    if (sessionStore.isInitialized()) {
+      return;
+    }
+    await sessionStore.init(this.getHostContext());
+  }
+
+  private normalizeBannerText(value?: string | null): string {
+    return typeof value === 'string' ? value.trim() : '';
+  }
+
+  private resolveTraceId(error: Object): string {
+    const errorObject = error as Record<string, Object>;
+    const traceId = errorObject['traceId'];
+    if (typeof traceId === 'string') {
+      return traceId;
+    }
+    return '';
+  }
+
+  private resolveBannerErrorMessage(error: Object): string {
+    const errorObject = error as Record<string, Object>;
+    const code = errorObject['code'];
+    const message = errorObject['message'];
+
+    if (typeof code === 'number' && code === 40100) {
+      return '登录后可同步首页 Banner 推荐';
+    }
+
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+
+    return '同步首页 Banner 失败，已保留本地展示图';
+  }
+
+  private mapBannerDto(dto: CocktailBannerDto): HomeBannerItem | null {
+    const title = this.normalizeBannerText(dto.title);
+    const imageUrl = buildPublicAssetUrl(this.normalizeBannerText(dto.imageUrl));
+    if (dto.cocktailId === undefined || title.length === 0 || imageUrl.length === 0) {
+      return null;
+    }
+    return {
+      cocktailId: dto.cocktailId,
+      title,
+      imageUrl
+    } as HomeBannerItem;
+  }
+
+  private async refreshHeroBanners(): Promise<void> {
+    try {
+      await this.ensureSessionStore();
+      const remoteBanners = await cocktailRepository.getCocktailBanner();
+      const nextBanners: HomeBannerItem[] = [];
+
+      for (let index: number = 0; index < remoteBanners.length; index += 1) {
+        const mappedBanner = this.mapBannerDto(remoteBanners[index]);
+        if (mappedBanner) {
+          nextBanners.push(mappedBanner);
+        }
+      }
+
+      this.heroBanners = nextBanners;
+    } catch (error) {
+      const message = this.resolveBannerErrorMessage(error as Object);
+      const traceId = this.resolveTraceId(error as Object);
+      promptAction.showToast({
+        message: traceId.length > 0 ? `${message} (${traceId})` : message
+      });
+    }
+  }
 
   @Builder
   private buildHeader() {
@@ -101,28 +195,106 @@ export struct MainPage {
   }
 
   @Builder
+  private buildStaticHeroCard(img: Resource) {
+    Stack({ alignContent: Alignment.BottomStart }) {
+      Image(img)
+        .width('100%')
+        .height(228)
+        .borderRadius(24)
+        .objectFit(ImageFit.Cover);
+
+      Column()
+        .width('100%')
+        .height('100%')
+        .borderRadius(24)
+        .linearGradient({
+          direction: GradientDirection.Top,
+          repeating: false,
+          colors: [['#1D4A5A12', 0.0], ['#1D4A5A55', 0.58], ['#123241D0', 1.0]]
+        });
+
+      Column({ space: 8 }) {
+        Text('本地展示 Banner')
+          .fontSize(12)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#D5E7F0')
+          .letterSpacing(0.8);
+
+        Text('登录后自动同步最新鸡尾酒推荐')
+          .fontSize(22)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FFFFFF')
+          .maxLines(2);
+      }
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .padding({ left: 20, right: 20, bottom: 22 });
+    }
+    .width('100%')
+    .onClick(() => {
+      router.pushUrl({ url: 'features/recipe/pages/RecipeLibraryPage' }, 3000);
+    });
+  }
+
+  @Builder
+  private buildRemoteHeroCard(item: HomeBannerItem) {
+    Stack({ alignContent: Alignment.BottomStart }) {
+      Image(item.imageUrl)
+        .width('100%')
+        .height(228)
+        .borderRadius(24)
+        .objectFit(ImageFit.Cover);
+
+      Column()
+        .width('100%')
+        .height('100%')
+        .borderRadius(24)
+        .linearGradient({
+          direction: GradientDirection.Top,
+          repeating: false,
+          colors: [['#14374414', 0.0], ['#163D4F66', 0.56], ['#102A35DC', 1.0]]
+        });
+
+      Column({ space: 8 }) {
+        Text('后端 Banner')
+          .fontSize(12)
+          .fontWeight(FontWeight.Medium)
+          .fontColor('#D7EAF3')
+          .letterSpacing(0.8);
+
+        Text(item.title)
+          .fontSize(24)
+          .fontWeight(FontWeight.Bold)
+          .fontColor('#FFFFFF')
+          .maxLines(2);
+
+        Text('点击查看这杯酒的完整配方详情')
+          .fontSize(12)
+          .fontColor('#D4E8F1');
+      }
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .padding({ left: 20, right: 20, bottom: 22 });
+    }
+    .width('100%')
+    .onClick(() => {
+      this.navigateToRecipeDetail(item.cocktailId);
+    });
+  }
+
+  @Builder
   private buildHeroSection() {
     Stack({ alignContent: Alignment.BottomStart }) {
       Swiper(this.swiperController) {
-        ForEach(MainViewModel.getSwiperImages(), (img: Resource) => {
-          Stack({ alignContent: Alignment.BottomStart }) {
-            Image(img)
-              .width('100%')
-              .height(228)
-              .borderRadius(24)
-              .objectFit(ImageFit.Cover);
-
-            Column()
-              .width('100%')
-              .height('100%')
-              .borderRadius(24)
-              .linearGradient({
-                direction: GradientDirection.Top,
-                repeating: false,
-                colors: [['#1D4A5A12', 0.0], ['#1D4A5A55', 0.58], ['#123241D0', 1.0]]
-              });
-          }
-        });
+        if (this.heroBanners.length > 0) {
+          ForEach(this.heroBanners, (item: HomeBannerItem) => {
+            this.buildRemoteHeroCard(item);
+          }, (item: HomeBannerItem) => `banner-${item.cocktailId}`);
+        } else {
+          ForEach(MainViewModel.getSwiperImages(), (img: Resource) => {
+            this.buildStaticHeroCard(img);
+          }, (img: Resource) => String(img.id));
+        }
       }
       .autoPlay(true)
       .indicator(true)
