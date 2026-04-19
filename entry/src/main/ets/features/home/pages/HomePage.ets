@@ -1,16 +1,19 @@
-import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
-import ItemData from '../model/ItemData';
-import MainViewModel from '../viewmodel/MainViewModel';
+import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
+import { UiTokens } from '../../../common/constants/UiTokens';
 import { buildPublicAssetUrl } from '../../../common/constants/ApiConfig';
 import { sessionStore } from '../../../common/storage/SessionStore';
+import { aiCocktailSessionStore } from '../../ai/viewmodel/AICocktailSessionStore';
 import { cocktailRepository } from '../../cocktail/repository/CocktailRepository';
 import { CocktailBannerDto } from '../../cocktail/model/CocktailDetailModels';
+import ItemData from '../model/ItemData';
+import MainViewModel from '../viewmodel/MainViewModel';
 
 interface DashboardStat {
   value: string;
   label: string;
+  detail: string;
 }
 
 interface HomeBannerItem {
@@ -24,12 +27,15 @@ interface HomeBannerItem {
 export struct MainPage {
   private swiperController: SwiperController = new SwiperController();
   private readonly featuredCocktailIds: number[] = [8, 9, 10];
+  private readonly quickPromptSamples: string[] = ['清爽低酒精', '适合聚会', '只用现有材料'];
+
   @State private heroBanners: HomeBannerItem[] = [];
+  @State private aiPromptDraft: string = '';
 
   private readonly stats: DashboardStat[] = [
-    { value: '12', label: '今日建议' },
-    { value: '84%', label: '库存匹配' },
-    { value: '3.2m', label: '平均出杯' }
+    { value: '12', label: '今日建议', detail: 'AI 已准备好候选酒单' },
+    { value: '84%', label: '库存匹配', detail: '结合已录入材料估算' },
+    { value: '3.2m', label: '平均出杯', detail: '适合快速执行的方案' }
   ];
 
   aboutToAppear(): void {
@@ -114,84 +120,182 @@ export struct MainPage {
     }
   }
 
+  private openAiPage(prefillPrompt: string = this.aiPromptDraft): void {
+    aiCocktailSessionStore.setInputText(prefillPrompt);
+    router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' }, 3000);
+  }
+
+  private applyPromptSample(sample: string): void {
+    this.aiPromptDraft = sample;
+    this.openAiPage(sample);
+  }
+
   @Builder
   private buildHeader() {
+    Row() {
+      Column({ space: 6 }) {
+        Text('ShakePro Control')
+          .fontSize(13)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(UiTokens.textSecondary)
+          .letterSpacing(1.1);
+
+        Text('智能调酒工作台')
+          .fontSize(30)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.textPrimary);
+
+        Text('先从 AI 调酒开始，再结合库存和酒谱继续细化。')
+          .fontSize(13)
+          .fontColor(UiTokens.textSecondary);
+      }
+      .alignItems(HorizontalAlign.Start);
+
+      Blank();
+
+      Row() {
+        Image($r('app.media.myself'))
+          .width(48)
+          .height(48)
+          .borderRadius(24);
+      }
+      .width(56)
+      .height(56)
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor(UiTokens.surfacePrimary)
+      .borderRadius(UiTokens.radiusMd)
+      .border({ width: 1, color: UiTokens.borderPrimary });
+    }
+    .width('100%');
+  }
+
+  @Builder
+  private buildAiHeroCard() {
     Column({ space: 16 }) {
       Row() {
-        Column({ space: 6 }) {
-          Text('ShakePro Control')
-            .fontSize(14)
+        Column({ space: 8 }) {
+          Text('AI 调酒优先入口')
+            .fontSize(12)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#5D7B8C')
-            .letterSpacing(1.1);
+            .fontColor(UiTokens.aiPrimary)
+            .letterSpacing(1.2);
 
-          Text('智能调酒工作台')
-            .fontSize(30)
+          Text('今天想调一杯什么状态？')
+            .fontSize(28)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#16303E');
+            .fontColor(UiTokens.textPrimary)
+            .lineHeight(36);
 
-          Text('集中查看推荐、库存和功能入口。')
+          Text('输入口味、场景或现有材料，AI 先给你出配方，再继续走库存与酒谱工作流。')
             .fontSize(13)
-            .fontColor('#6E818D');
+            .fontColor(UiTokens.textSecondary)
+            .lineHeight(20);
         }
+        .layoutWeight(1)
         .alignItems(HorizontalAlign.Start);
 
-        Blank();
+        Column({ space: 8 }) {
+          Text('建议流程')
+            .fontSize(11)
+            .fontWeight(FontWeight.Medium)
+            .fontColor(UiTokens.textSecondary);
 
-        Row() {
-          Image($r('app.media.myself'))
-            .width(48)
-            .height(48)
-            .borderRadius(24);
+          Text('AI 推荐')
+            .fontSize(12)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary)
+            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+            .backgroundColor(UiTokens.aiSoft)
+            .borderRadius(16);
+
+          Text('查看酒谱')
+            .fontSize(12)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary)
+            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+            .backgroundColor(UiTokens.surfaceSecondary)
+            .borderRadius(16);
         }
-        .width(56)
-        .height(56)
-        .justifyContent(FlexAlign.Center)
-        .backgroundColor('#FFFFFF')
-        .borderRadius(20)
-        .border({ width: 1, color: '#D7E6ED' });
+        .alignItems(HorizontalAlign.End);
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Top);
+
+      Column({ space: 10 }) {
+        TextInput({
+          placeholder: '比如：清爽一点，适合聚会，家里有金酒和柠檬',
+          text: this.aiPromptDraft
+        })
+          .width('100%')
+          .height(56)
+          .fontSize(15)
+          .fontColor(UiTokens.textPrimary)
+          .placeholderColor(UiTokens.textTertiary)
+          .backgroundColor(UiTokens.surfacePrimary)
+          .borderRadius(20)
+          .padding({ left: 18, right: 18 })
+          .border({ width: 1, color: UiTokens.borderPrimary })
+          .onChange((value: string) => {
+            this.aiPromptDraft = value;
+          });
+
+        Scroll() {
+          Row({ space: 10 }) {
+            ForEach(this.quickPromptSamples, (sample: string) => {
+              Button(sample)
+                .fontSize(12)
+                .fontColor(UiTokens.textAccent)
+                .backgroundColor(UiTokens.surfacePrimary)
+                .borderRadius(16)
+                .border({ width: 1, color: UiTokens.borderPrimary })
+                .padding({ left: 14, right: 14, top: 10, bottom: 10 })
+                .onClick(() => {
+                  this.applyPromptSample(sample);
+                });
+            }, (sample: string) => sample);
+          }
+          .padding({ right: 16 });
+        }
+        .width('100%')
+        .scrollable(ScrollDirection.Horizontal)
+        .scrollBar(BarState.Off);
       }
       .width('100%');
 
       Row({ space: 10 }) {
-        Row({ space: 10 }) {
-          Text('◌')
-            .fontSize(18)
-            .fontColor('#6A8EA0');
+        Button('开始 AI 推荐')
+          .layoutWeight(1)
+          .height(50)
+          .fontSize(15)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.textInverse)
+          .backgroundColor(UiTokens.aiPrimary)
+          .borderRadius(18)
+          .onClick(() => {
+            this.openAiPage();
+          });
 
-          TextInput({ placeholder: $r('app.string.search_interesting_content') })
-            .layoutWeight(1)
-            .height(48)
-            .backgroundColor(Color.Transparent)
-            .fontSize(15)
-            .placeholderColor('#8BA0AC');
-        }
-        .layoutWeight(1)
-        .height(54)
-        .padding({ left: 16, right: 16 })
-        .backgroundColor('#FFFFFF')
-        .borderRadius(18)
-        .border({ width: 1, color: '#D7E6ED' });
-
-        Column({ space: 2 }) {
-          Text('AI调酒')
-            .fontSize(14)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#124056');
-        }
-        .width(74)
-        .height(54)
-        .justifyContent(FlexAlign.Center)
-        .backgroundColor('#DDF5F1')
-        .borderRadius(18)
-        .border({ width: 1, color: '#BFE7E6' })
-        .onClick(() => {
-          router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' }, 3000);
-        });
+        Button('浏览酒谱')
+          .layoutWeight(1)
+          .height(50)
+          .fontSize(15)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(UiTokens.textPrimary)
+          .backgroundColor(UiTokens.surfacePrimary)
+          .borderRadius(18)
+          .border({ width: 1, color: UiTokens.borderPrimary })
+          .onClick(() => {
+            router.pushUrl({ url: 'features/recipe/pages/RecipeLibraryPage' }, 3000);
+          });
       }
       .width('100%');
     }
-    .width('100%');
+    .width('100%')
+    .padding({ left: 18, right: 18, top: 20, bottom: 20 })
+    .backgroundColor(UiTokens.aiSurface)
+    .borderRadius(UiTokens.radiusXl)
+    .border({ width: 1, color: UiTokens.borderPrimary })
+    .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
   }
 
   @Builder
@@ -199,7 +303,7 @@ export struct MainPage {
     Stack({ alignContent: Alignment.BottomStart }) {
       Image(img)
         .width('100%')
-        .height(228)
+        .height(212)
         .borderRadius(24)
         .objectFit(ImageFit.Cover);
 
@@ -214,16 +318,16 @@ export struct MainPage {
         });
 
       Column({ space: 8 }) {
-        Text('本地展示 Banner')
+        Text('灵感酒单')
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#D5E7F0')
+          .fontColor(UiTokens.textInverse)
           .letterSpacing(0.8);
 
         Text('登录后自动同步最新鸡尾酒推荐')
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
+          .fontColor(UiTokens.textInverse)
           .maxLines(2);
       }
       .width('100%')
@@ -241,7 +345,7 @@ export struct MainPage {
     Stack({ alignContent: Alignment.BottomStart }) {
       Image(item.imageUrl)
         .width('100%')
-        .height(228)
+        .height(212)
         .borderRadius(24)
         .objectFit(ImageFit.Cover);
 
@@ -256,16 +360,16 @@ export struct MainPage {
         });
 
       Column({ space: 8 }) {
-        Text('后端 Banner')
+        Text('今日灵感')
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#D7EAF3')
+          .fontColor(UiTokens.textInverse)
           .letterSpacing(0.8);
 
         Text(item.title)
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
+          .fontColor(UiTokens.textInverse)
           .maxLines(2);
 
         Text('点击查看这杯酒的完整配方详情')
@@ -283,24 +387,29 @@ export struct MainPage {
   }
 
   @Builder
-  private buildHeroSection() {
-    Stack({ alignContent: Alignment.BottomStart }) {
-      Swiper(this.swiperController) {
-        if (this.heroBanners.length > 0) {
-          ForEach(this.heroBanners, (item: HomeBannerItem) => {
-            this.buildRemoteHeroCard(item);
-          }, (item: HomeBannerItem) => `banner-${item.cocktailId}`);
-        } else {
-          ForEach(MainViewModel.getSwiperImages(), (img: Resource) => {
-            this.buildStaticHeroCard(img);
-          }, (img: Resource) => String(img.id));
+  private buildShowcaseSection() {
+    Column({ space: 12 }) {
+      this.buildSectionHeader('今日建议', '基于当前工作流给你的灵感入口')
+
+      Stack({ alignContent: Alignment.BottomStart }) {
+        Swiper(this.swiperController) {
+          if (this.heroBanners.length > 0) {
+            ForEach(this.heroBanners, (item: HomeBannerItem) => {
+              this.buildRemoteHeroCard(item);
+            }, (item: HomeBannerItem) => `banner-${item.cocktailId}`);
+          } else {
+            ForEach(MainViewModel.getSwiperImages(), (img: Resource) => {
+              this.buildStaticHeroCard(img);
+            }, (img: Resource) => String(img.id));
+          }
         }
+        .autoPlay(true)
+        .indicator(true)
+        .interval(3600)
+        .width('100%')
+        .height(212);
       }
-      .autoPlay(true)
-      .indicator(true)
-      .interval(3600)
-      .width('100%')
-      .height(228);
+      .width('100%');
     }
     .width('100%');
   }
@@ -308,23 +417,31 @@ export struct MainPage {
   @Builder
   private buildStatsPanel() {
     Row({ space: 10 }) {
-      ForEach(this.stats, (item: DashboardStat) => {
+      ForEach(this.stats, (item: DashboardStat, index: number) => {
         Column({ space: 8 }) {
           Text(item.value)
             .fontSize(24)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#153342');
+            .fontColor(UiTokens.textPrimary);
 
           Text(item.label)
             .fontSize(12)
-            .fontColor('#71838F')
+            .fontWeight(FontWeight.Medium)
+            .fontColor(UiTokens.textSecondary)
             .textAlign(TextAlign.Center);
+
+          Text(item.detail)
+            .fontSize(10)
+            .fontColor(UiTokens.textTertiary)
+            .textAlign(TextAlign.Center)
+            .lineHeight(16)
+            .maxLines(2);
         }
         .layoutWeight(1)
-        .padding({ top: 16, bottom: 16 })
-        .backgroundColor('#FFFFFF')
-        .borderRadius(18)
-        .border({ width: 1, color: '#D7E6ED' });
+        .padding({ left: 12, right: 12, top: 16, bottom: 16 })
+        .backgroundColor(index === 0 ? UiTokens.aiSurface : UiTokens.surfacePrimary)
+        .borderRadius(20)
+        .border({ width: 1, color: UiTokens.borderPrimary });
       });
     }
     .width('100%');
@@ -337,11 +454,11 @@ export struct MainPage {
         Text(title)
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#16303E');
+          .fontColor(UiTokens.textPrimary);
 
         Text(subtitle)
           .fontSize(12)
-          .fontColor('#738590');
+          .fontColor(UiTokens.textSecondary);
       }
       .alignItems(HorizontalAlign.Start);
 
@@ -350,7 +467,7 @@ export struct MainPage {
       Text('更多')
         .fontSize(12)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#5C8192');
+        .fontColor(UiTokens.textAccent);
     }
     .width('100%')
     .alignItems(VerticalAlign.Bottom);
@@ -370,19 +487,19 @@ export struct MainPage {
       .width(56)
       .height(56)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor(index % 2 === 0 ? '#E8F5FB' : '#DDF5F1')
+      .backgroundColor(index % 2 === 0 ? UiTokens.primarySoft : UiTokens.aiSoft)
       .borderRadius(18);
 
       Column({ space: 6 }) {
         Text(item.title)
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#193342')
+          .fontColor(UiTokens.textPrimary)
           .maxLines(2);
 
         Text(this.getMenuDescription(item.title))
-          .fontSize(9)
-          .fontColor('#72838F')
+          .fontSize(10)
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(17)
           .maxLines(2);
       }
@@ -391,9 +508,9 @@ export struct MainPage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(20)
-    .border({ width: 1, color: '#D7E6ED' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .onClick(() => {
       this.navigateToPage(item.title);
     });
@@ -402,7 +519,7 @@ export struct MainPage {
   @Builder
   private buildQuickActions() {
     Column({ space: 12 }) {
-      this.buildSectionHeader('功能模块', '按用途分组显示')
+      this.buildSectionHeader('快捷操作', '先录入库存，再决定要不要继续生成或收藏')
 
       Grid() {
         ForEach(MainViewModel.getFirstGirdData(), (item: ItemData, index: number) => {
@@ -434,33 +551,33 @@ export struct MainPage {
         Text(item.title)
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#173240')
+          .fontColor(UiTokens.textPrimary)
           .maxLines(2);
 
         if (item.others) {
           Text(item.others)
             .fontSize(12)
-            .fontColor('#5C8797');
+            .fontColor(UiTokens.textAccent);
         }
 
-        Text(index === 0 ? '结构清晰，适合标准化复刻。' : index === 1 ? '层次更强，适合聚会与展示。' : '风味轻盈，适合快速上手。')
+        Text(index === 0 ? '适合标准化复刻，也适合先从经典版本开始尝试。' : index === 1 ? '层次更强，适合聚会与展示。' : '风味轻盈，适合快速上手。')
           .fontSize(12)
-          .fontColor('#71828D')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(18)
           .maxLines(3);
 
         Row({ space: 8 }) {
-          Text(index === 0 ? '经典' : index === 1 ? '推荐' : '轻饮')
+          Text(index === 0 ? '经典底稿' : index === 1 ? '聚会推荐' : '轻饮友好')
             .fontSize(11)
-            .fontColor('#1D5667')
+            .fontColor(UiTokens.textAccent)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-            .backgroundColor('#E8F5FB')
+            .backgroundColor(UiTokens.primarySoft)
             .borderRadius(14);
 
           Text('查看酒谱')
             .fontSize(12)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#4F7E91');
+            .fontColor(UiTokens.aiPrimary);
         }
       }
       .layoutWeight(1)
@@ -468,9 +585,9 @@ export struct MainPage {
     }
     .width('100%')
     .padding(16)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(22)
-    .border({ width: 1, color: '#D7E6ED' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .onClick(() => {
       this.navigateToRecipeDetail(this.getFeaturedCocktailId(index));
     });
@@ -479,7 +596,7 @@ export struct MainPage {
   @Builder
   private buildFeaturedRecipes() {
     Column({ space: 12 }) {
-      this.buildSectionHeader('推荐配方', '结合当前素材和常用主题')
+      this.buildSectionHeader('推荐配方', '先浏览经典酒谱，再决定要不要继续深入查看')
 
       Column({ space: 12 }) {
         ForEach(MainViewModel.getSecondGridData(), (item: ItemData, index: number) => {
@@ -495,16 +612,17 @@ export struct MainPage {
     Scroll() {
       Column({ space: 18 }) {
         this.buildHeader();
-        this.buildHeroSection();
+        this.buildAiHeroCard();
         this.buildStatsPanel();
         this.buildQuickActions();
+        this.buildShowcaseSection();
         this.buildFeaturedRecipes();
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 18, bottom: 110 });
     }
     .height('100%')
-    .backgroundColor('#F4F8FB')
+    .backgroundColor(UiTokens.pageBackground)
     .scrollBar(BarState.Off);
   }
 
@@ -513,13 +631,13 @@ export struct MainPage {
       return '查看已保存的配方与出杯记录';
     }
     if (title.id === $r('app.string.material_selection').id) {
-      return '根据原料快速定位可执行方案';
+      return '进入材料库，管理已经录入的库存与原料';
     }
     if (title.id === $r('app.string.favorite_recipes').id) {
       return '集中管理高频使用的收藏酒谱';
     }
     if (title.id === $r('app.string.classic_formula').id) {
-      return '按标准结构浏览经典配方';
+      return '先找灵感，再查看标准配方与做法';
     }
     if (title.id === $r('app.string.friend').id) {
       return '用于分享作品和查看协作内容';

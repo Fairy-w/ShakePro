@@ -1,10 +1,11 @@
+import { UiTokens } from '../../../common/constants/UiTokens';
 @Component
 export struct RecipeStatCard {
   @Prop title: string = '';
   @Prop value: string = '';
   @Prop detail: string = '';
-  @Prop cardBgColor: ResourceColor = '#FFFBF5';
-  @Prop cardAccentColor: ResourceColor = '#E7CDA7';
+  @Prop cardBgColor: ResourceColor = UiTokens.surfaceWarm;
+  @Prop cardAccentColor: ResourceColor = UiTokens.accentWarm;
 
   build() {
     Column({ space: 12 }) {
@@ -16,18 +17,18 @@ export struct RecipeStatCard {
 
       Text(this.title)
         .fontSize(12)
-        .fontColor('#7A6D60');
+        .fontColor(UiTokens.textSecondary);
 
       Text(this.value)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#1E1711')
+        .fontColor(UiTokens.textPrimary)
         .lineHeight(24)
         .maxLines(3);
 
       Text(this.detail)
         .fontSize(11)
-        .fontColor('#76695D')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(17);
     }
     .layoutWeight(1)
@@ -35,7 +36,7 @@ export struct RecipeStatCard {
     .padding({ left: 16, right: 16, top: 16, bottom: 16 })
     .backgroundColor(this.cardBgColor)
     .borderRadius(24)
-    .border({ width: 1, color: '#F0DEC5' })
-    .shadow({ radius: 14, color: '#A27A3A10', offsetX: 0, offsetY: 8 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 14, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 8 });
   }
 }

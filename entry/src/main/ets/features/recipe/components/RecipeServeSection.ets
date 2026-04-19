@@ -1,13 +1,14 @@
 import { EMPTY_SYSTEM_RECIPE, SystemRecipe } from '../model/SystemRecipeData';
 import { RecipeInlineHeader } from './RecipeInlineHeader';
 import { RecipeStatCard } from './RecipeStatCard';
+import { UiTokens } from '../../../common/constants/UiTokens';
 
 @Component
 export struct RecipeServeSection {
   @Prop recipe: SystemRecipe = EMPTY_SYSTEM_RECIPE;
 
   @Builder
-  private buildNoteItem(text: string, textColor: string = '#716559', dotColor: string = '#D2AE7A') {
+  private buildNoteItem(text: string, textColor: string = UiTokens.textSecondary, dotColor: string = UiTokens.accentWarm) {
     Row({ space: 10 }) {
       Column()
         .width(8)
@@ -39,15 +40,15 @@ export struct RecipeServeSection {
           title: '杯型',
           value: this.recipe.glass,
           detail: '选对杯型更好喝',
-          cardBgColor: '#FFFBF5',
-          cardAccentColor: '#E7CDA7'
+          cardBgColor: UiTokens.surfaceWarm,
+          cardAccentColor: UiTokens.accentWarm
         });
         RecipeStatCard({
           title: '装饰',
           value: this.recipe.garnish,
           detail: '点缀到位更完整',
-          cardBgColor: '#F7FBFD',
-          cardAccentColor: '#C2DFE8'
+          cardBgColor: UiTokens.pageGradientStart,
+          cardAccentColor: UiTokens.primary
         });
       }
       .width('100%');
@@ -57,7 +58,7 @@ export struct RecipeServeSection {
           Text('搭配建议')
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#201812');
+            .fontColor(UiTokens.textPrimary);
 
           ForEach(this.recipe.pairings, (item: string) => {
             this.buildNoteItem(item);
@@ -65,27 +66,27 @@ export struct RecipeServeSection {
         }
         .layoutWeight(1)
         .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-        .backgroundColor('#FFFBF5')
+        .backgroundColor(UiTokens.surfaceWarm)
         .borderRadius(24)
-        .border({ width: 1, color: '#F0DEC5' })
-        .shadow({ radius: 16, color: '#A27A3A10', offsetX: 0, offsetY: 8 });
+        .border({ width: 1, color: UiTokens.borderWarm })
+        .shadow({ radius: 16, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 8 });
 
         Column({ space: 12 }) {
           Text('服务提醒')
             .fontSize(16)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#201812');
+            .fontColor(UiTokens.textPrimary);
 
           ForEach(this.recipe.serviceNotes, (item: string) => {
-            this.buildNoteItem(item, '#65584C', '#9AD0DD');
+            this.buildNoteItem(item, UiTokens.textSecondary, UiTokens.primary);
           }, (item: string) => `${this.recipe.id}-service-${item}`);
         }
         .layoutWeight(1)
         .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-        .backgroundColor('#F7FBFD')
+        .backgroundColor(UiTokens.pageGradientStart)
         .borderRadius(24)
-        .border({ width: 1, color: '#D9EAF0' })
-        .shadow({ radius: 16, color: '#82A9B20C', offsetX: 0, offsetY: 8 });
+        .border({ width: 1, color: UiTokens.borderPrimary })
+        .shadow({ radius: 16, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 8 });
       }
       .width('100%')
       .alignItems(VerticalAlign.Top);

@@ -1,4 +1,5 @@
 import { FavoriteAiCocktailItem } from '../model/FavoriteAiCocktailModels';
+import { UiTokens } from '../../../common/constants/UiTokens';
 
 @Component
 export struct FavoriteRecipeCard {
@@ -20,20 +21,20 @@ export struct FavoriteRecipeCard {
   private buildTag(text: string) {
     Text(text)
       .fontSize(11)
-      .fontColor('#6C5437')
+      .fontColor(UiTokens.textAccent)
       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-      .backgroundColor('#F1E1C8')
+      .backgroundColor(UiTokens.accentWarmSoft)
       .borderRadius(14);
   }
 
   @Builder
-  private buildBullet(text: string, color: string = '#4F3C28') {
+  private buildBullet(text: string, color: string = UiTokens.textPrimary) {
     Row({ space: 10 }) {
       Column()
         .width(6)
         .height(6)
         .borderRadius(3)
-        .backgroundColor('#B18B5D')
+        .backgroundColor(UiTokens.accentWarm)
         .margin({ top: 7 });
 
       Text(text)
@@ -53,13 +54,13 @@ export struct FavoriteRecipeCard {
           Text(this.item.name)
             .fontSize(22)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#1F1711')
+            .fontColor(UiTokens.textPrimary)
             .lineHeight(28);
 
           if (this.item.description.length > 0) {
             Text(this.item.description)
               .fontSize(13)
-              .fontColor('#5A4632')
+              .fontColor(UiTokens.textSecondary)
               .lineHeight(20);
           }
         }
@@ -68,9 +69,9 @@ export struct FavoriteRecipeCard {
 
         Text('AI 收藏')
           .fontSize(11)
-          .fontColor('#7B603D')
+          .fontColor(UiTokens.textAccent)
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#F4E7D3')
+          .backgroundColor(UiTokens.accentWarmSoft)
           .borderRadius(14);
       }
       .width('100%')
@@ -90,17 +91,17 @@ export struct FavoriteRecipeCard {
           Text('当时你的需求')
             .fontSize(11)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#8A6C46')
+            .fontColor(UiTokens.textAccent)
             .letterSpacing(1.2);
 
           Text(this.item.prompt)
             .fontSize(13)
-            .fontColor('#5C4935')
+            .fontColor(UiTokens.textSecondary)
             .lineHeight(20);
         }
         .width('100%')
         .padding({ left: 14, right: 14, top: 14, bottom: 14 })
-        .backgroundColor('#FAF3EA')
+        .backgroundColor(UiTokens.surfaceWarmAlt)
         .borderRadius(18);
       }
 
@@ -108,7 +109,7 @@ export struct FavoriteRecipeCard {
         Text('你需要准备')
           .fontSize(11)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#8A6C46')
+          .fontColor(UiTokens.textAccent)
           .letterSpacing(1.2);
 
         Column({ space: 10 }) {
@@ -125,7 +126,7 @@ export struct FavoriteRecipeCard {
         Text('怎么调')
           .fontSize(11)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#8A6C46')
+          .fontColor(UiTokens.textAccent)
           .letterSpacing(1.2);
 
         Column({ space: 10 }) {
@@ -135,18 +136,18 @@ export struct FavoriteRecipeCard {
                 Text(`${index + 1}`)
                   .fontSize(11)
                   .fontWeight(FontWeight.Bold)
-                  .fontColor('#4F3921');
+                  .fontColor(UiTokens.textPrimary);
               }
               .width(24)
               .height(24)
               .justifyContent(FlexAlign.Center)
-              .backgroundColor('#F1E1C8')
+              .backgroundColor(UiTokens.accentWarmSoft)
               .borderRadius(12);
 
               Text(step)
                 .layoutWeight(1)
                 .fontSize(13)
-                .fontColor('#4F3C28')
+                .fontColor(UiTokens.textPrimary)
                 .lineHeight(20);
             }
             .width('100%')
@@ -164,8 +165,8 @@ export struct FavoriteRecipeCard {
         .enabled(!this.isRemoving)
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#3F2C1A')
-        .backgroundColor('#E7CDA7')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarm)
         .borderRadius(16)
         .onClick(() => {
           this.onRemove(this.item);
@@ -173,9 +174,9 @@ export struct FavoriteRecipeCard {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#F6E8D7')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#E3C9A7' })
-    .shadow({ radius: 16, color: '#2A1C0C14', offsetX: 0, offsetY: 10 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 16, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
   }
 }

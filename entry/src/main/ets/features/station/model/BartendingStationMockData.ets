@@ -1,3 +1,6 @@
+
+import { MaterialPreviewImageSource } from '../../../common/components/MaterialImagePreviewOverlay';
+
 export interface StationStat {
   id: string;
   value: string;
@@ -29,13 +32,14 @@ export interface MaterialCategory {
   softColor: string;
   previewItems: string[];
 }
-
-export interface MaterialRecord {
+export interface MaterialRecord extends MaterialPreviewImageSource {
   id: string;
   name: string;
   subtitle: string;
   categoryId: string;
   categoryName: string;
+  barcode?: string;
+  addedAt?: string;
   amountText: string;
   statusText: string;
   needsCompletion: boolean;
@@ -49,6 +53,11 @@ export interface SelectableMaterial {
   id: string;
   materialId?: number;
   name: string;
+  imageUrl?: string;
+  imageUrlThumb?: string;
+  imageUrlCard?: string;
+  imageUrlDetail?: string;
+  description?: string;
   subtitle: string;
   categoryId: string;
   categoryName: string;
@@ -61,8 +70,7 @@ export interface SelectableMaterial {
   isRecent: boolean;
   isRecommended: boolean;
 }
-
-export interface MaterialDraft {
+export interface MaterialDraft extends MaterialPreviewImageSource {
   id: string;
   source: string;
   sourceLabel: string;
@@ -71,6 +79,7 @@ export interface MaterialDraft {
   brand: string;
   categoryId: string;
   barcode: string;
+  addedAt?: string;
   materialId?: number;
   capacityText: string;
   remainLevel: string;
@@ -749,7 +758,12 @@ export function getDraftById(materialId?: string): MaterialDraft {
       subtitle: draft.subtitle,
       brand: draft.brand,
       categoryId: draft.categoryId,
+      imageUrl: draft.imageUrl,
+      imageUrlThumb: draft.imageUrlThumb,
+      imageUrlCard: draft.imageUrlCard,
+      imageUrlDetail: draft.imageUrlDetail,
       barcode: draft.barcode,
+      addedAt: draft.addedAt,
       materialId: draft.materialId,
       capacityText: draft.capacityText,
       remainLevel: draft.remainLevel,
@@ -771,7 +785,12 @@ export function getDraftById(materialId?: string): MaterialDraft {
     subtitle: '先收进材料台，再逐步补充信息。',
     brand: '未填写',
     categoryId: 'spirit',
+    imageUrl: undefined,
+    imageUrlThumb: undefined,
+    imageUrlCard: undefined,
+    imageUrlDetail: undefined,
     barcode: '-',
+    addedAt: undefined,
     capacityText: '700ml',
     remainLevel: '满瓶',
     opened: false,

@@ -2,7 +2,27 @@
   "color": [
     {
       "name": "start_window_background",
+      "value": "#F4F8FA"
+    },
+    {
+      "name": "brand_strong",
+      "value": "#17303D"
+    },
+    {
+      "name": "brand_primary",
+      "value": "#2E7C8F"
+    },
+    {
+      "name": "brand_ai",
+      "value": "#4A8F88"
+    },
+    {
+      "name": "surface_primary",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "surface_warm",
+      "value": "#FCF7EE"
     }
   ]
 }

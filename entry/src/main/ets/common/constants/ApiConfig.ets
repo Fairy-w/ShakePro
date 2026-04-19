@@ -23,6 +23,7 @@ export const AI_GENERATE_RECIPE_BY_TEXT_PATH: string = '/api/ai/generate-recipe-
 export const COCKTAILS_PATH: string = '/api/cocktails';
 export const OSS_PRESIGN_PATH: string = '/api/oss/presign';
 export const FILES_PATH: string = '/api/files';
+export const FAVORITES_PATH: string = '/api/favorites';
 export const FAVORITE_AI_COCKTAILS_PATH: string = '/api/favorites/ai-cocktails';
 export const FAVORITE_AI_COCKTAIL_STATUS_PATH: string = '/api/favorites/ai-cocktails/status';
 export const BARCODE_LOOKUP_PATH: string = '/api/barcodes/lookup';

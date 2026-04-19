@@ -1,6 +1,7 @@
 import { EMPTY_SYSTEM_RECIPE, SystemRecipe } from '../model/SystemRecipeData';
 import { RecipeInlineHeader } from './RecipeInlineHeader';
 import { RecipeStatCard } from './RecipeStatCard';
+import { UiTokens } from '../../../common/constants/UiTokens';
 
 @Component
 export struct RecipeOverviewSection {
@@ -18,35 +19,35 @@ export struct RecipeOverviewSection {
         Text(this.recipe.description)
           .fontSize(16)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#201812')
+          .fontColor(UiTokens.textPrimary)
           .lineHeight(25);
 
         Text(this.recipe.story)
           .fontSize(13)
-          .fontColor('#74695F')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(22);
       }
       .width('100%')
       .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-      .backgroundColor('#FFF8F0')
+      .backgroundColor(UiTokens.surfaceWarm)
       .borderRadius(28)
-      .border({ width: 1, color: '#F0DEC5' })
-      .shadow({ radius: 18, color: '#A27A3A12', offsetX: 0, offsetY: 10 });
+      .border({ width: 1, color: UiTokens.borderWarm })
+      .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
 
       Row({ space: 12 }) {
         RecipeStatCard({
           title: '制作难度',
           value: this.recipe.difficulty,
           detail: '上手前先有预期',
-          cardBgColor: '#F7FBFD',
-          cardAccentColor: '#C2DFE8'
+          cardBgColor: UiTokens.pageGradientStart,
+          cardAccentColor: UiTokens.primary
         });
         RecipeStatCard({
           title: '预计酒精度',
           value: this.recipe.abv,
           detail: '喝之前先有准备',
-          cardBgColor: '#FFFBF5',
-          cardAccentColor: '#E7CDA7'
+          cardBgColor: UiTokens.surfaceWarm,
+          cardAccentColor: UiTokens.accentWarm
         });
       }
       .width('100%');

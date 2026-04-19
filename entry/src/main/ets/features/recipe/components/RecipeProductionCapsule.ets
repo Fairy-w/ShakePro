@@ -1,5 +1,6 @@
 import { EMPTY_SYSTEM_RECIPE, RecipeIngredient, RecipeStep, SystemRecipe } from '../model/SystemRecipeData';
 import { RecipeSectionTitle } from './RecipeSectionTitle';
+import { UiTokens } from '../../../common/constants/UiTokens';
 
 @Component
 export struct RecipeProductionCapsule {
@@ -12,17 +13,17 @@ export struct RecipeProductionCapsule {
       Text(text)
         .fontSize(15)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.activeTabIndex === index ? '#241A10' : '#E7D7C1');
+        .fontColor(this.activeTabIndex === index ? UiTokens.textPrimary : UiTokens.textSecondary);
 
       Text(detail)
         .fontSize(10)
-        .fontColor(this.activeTabIndex === index ? '#6F5A44' : '#A8937C');
+        .fontColor(this.activeTabIndex === index ? UiTokens.textSecondary : UiTokens.textTertiary);
     }
     .layoutWeight(1)
     .padding({ top: 14, bottom: 14 })
-    .backgroundColor(this.activeTabIndex === index ? '#F7E6CF' : '#241B16')
+    .backgroundColor(this.activeTabIndex === index ? UiTokens.accentWarmSoft : UiTokens.surfaceSecondary)
     .borderRadius(20)
-    .border({ width: 1, color: this.activeTabIndex === index ? '#F0DEC5' : '#3C3028' })
+    .border({ width: 1, color: this.activeTabIndex === index ? UiTokens.borderWarm : UiTokens.borderPrimary })
     .onClick(() => {
       this.activeTabIndex = index;
     });
@@ -35,23 +36,23 @@ export struct RecipeProductionCapsule {
         Text(`${index + 1}`)
           .fontSize(12)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#38281C');
+          .fontColor(UiTokens.textPrimary);
       }
       .width(28)
       .height(28)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#EEDCBE')
+      .backgroundColor(UiTokens.accentWarmSoft)
       .borderRadius(14);
 
       Column({ space: 4 }) {
         Text(item.name)
           .fontSize(15)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#1F1711');
+          .fontColor(UiTokens.textPrimary);
 
         Text(item.note)
           .fontSize(12)
-          .fontColor('#74685C')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(18);
       }
       .layoutWeight(1)
@@ -60,16 +61,16 @@ export struct RecipeProductionCapsule {
       Text(item.amount)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#3D2E22')
+        .fontColor(UiTokens.textPrimary)
         .padding({ left: 10, right: 10, top: 8, bottom: 8 })
-        .backgroundColor('#FFF4E4')
+        .backgroundColor(UiTokens.accentWarmSoft)
         .borderRadius(14);
     }
     .width('100%')
     .padding({ left: 14, right: 14, top: 14, bottom: 14 })
-    .backgroundColor(index % 2 === 0 ? '#FFFBF5' : '#FFF8F0')
+    .backgroundColor(index % 2 === 0 ? UiTokens.surfaceWarm : UiTokens.surfaceWarm)
     .borderRadius(20)
-    .border({ width: 1, color: '#F0DEC5' });
+    .border({ width: 1, color: UiTokens.borderWarm });
   }
 
   @Builder
@@ -80,18 +81,18 @@ export struct RecipeProductionCapsule {
           Text(`${index + 1}`)
             .fontSize(13)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#FFF7EA');
+            .fontColor(UiTokens.textInverse);
         }
         .width(36)
         .height(36)
         .justifyContent(FlexAlign.Center)
-        .backgroundColor('#201712')
+        .backgroundColor(UiTokens.brandStrong)
         .borderRadius(18);
 
         Column()
           .width(2)
           .height(34)
-          .backgroundColor('#E8D9C4')
+          .backgroundColor(UiTokens.borderWarm)
           .borderRadius(1)
           .opacity(isLast ? 0 : 1);
       }
@@ -101,11 +102,11 @@ export struct RecipeProductionCapsule {
         Text(item.title)
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#1E1711');
+          .fontColor(UiTokens.textPrimary);
 
         Text(item.detail)
           .fontSize(13)
-          .fontColor('#74685C')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(21);
       }
       .layoutWeight(1)
@@ -113,9 +114,9 @@ export struct RecipeProductionCapsule {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 16, bottom: 16 })
-    .backgroundColor('#FFFBF5')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#F0DEC5' });
+    .border({ width: 1, color: UiTokens.borderWarm });
   }
 
   @Builder
@@ -130,15 +131,15 @@ export struct RecipeProductionCapsule {
       Row({ space: 10 }) {
         Text(this.activeTabIndex === 0 ? '先准备这些材料' : '跟着步骤调制')
           .fontSize(11)
-          .fontColor('#E7D7C1')
+          .fontColor(UiTokens.textAccent)
           .padding({ left: 10, right: 10, top: 7, bottom: 7 })
-          .backgroundColor('#241B16')
+          .backgroundColor(UiTokens.primarySoft)
           .borderRadius(14)
-          .border({ width: 1, color: '#3C3028' });
+          .border({ width: 1, color: UiTokens.borderPrimary });
 
         Text(this.activeTabIndex === 0 ? '准备齐全后，风味会更稳定' : '按顺序操作，更容易一次成功')
           .fontSize(11)
-          .fontColor('#AB9882');
+          .fontColor(UiTokens.textSecondary);
       }
       .width('100%');
 
@@ -160,10 +161,10 @@ export struct RecipeProductionCapsule {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#1B1511')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(30)
-    .border({ width: 1, color: '#312620' })
-    .shadow({ radius: 20, color: '#140B061E', offsetX: 0, offsetY: 12 });
+    .border({ width: 1, color: UiTokens.borderPrimary })
+    .shadow({ radius: 20, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 12 });
   }
 
   build() {

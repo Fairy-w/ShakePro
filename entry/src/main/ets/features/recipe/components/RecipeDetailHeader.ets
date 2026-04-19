@@ -1,6 +1,8 @@
+import { UiTokens } from '../../../common/constants/UiTokens';
 @Component
 export struct RecipeDetailHeader {
   @Prop isBookmarked: boolean = false;
+  @Prop isBookmarkBusy: boolean = false;
   onBack: () => void = () => {};
   onToggleBookmark: () => void = () => {};
   onShowMockHint: () => void = () => {};
@@ -12,8 +14,8 @@ export struct RecipeDetailHeader {
         .height(40)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#1F1711')
-        .backgroundColor('#F7E6CF')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarmSoft)
         .borderRadius(18)
         .padding({ left: 16, right: 16 })
         .onClick(() => {
@@ -24,21 +26,22 @@ export struct RecipeDetailHeader {
         Text('酒谱详情')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#1D1712');
+          .fontColor(UiTokens.textPrimary);
 
         Text('为你整理这一杯的完整信息')
           .fontSize(11)
-          .fontColor('#847666');
+          .fontColor(UiTokens.textSecondary);
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start);
 
-      Button(this.isBookmarked ? '已收藏' : '收藏')
+      Button(this.isBookmarkBusy ? '处理中...' : (this.isBookmarked ? '已收藏' : '收藏'))
         .height(40)
+        .enabled(!this.isBookmarkBusy)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.isBookmarked ? '#FFF8EE' : '#3C2A18')
-        .backgroundColor(this.isBookmarked ? '#231A14' : '#E7CDA7')
+        .fontColor(this.isBookmarked ? UiTokens.textInverse : UiTokens.textPrimary)
+        .backgroundColor(this.isBookmarked ? UiTokens.brandStrong : UiTokens.accentWarm)
         .borderRadius(18)
         .padding({ left: 16, right: 16 })
         .onClick(() => {
@@ -59,18 +62,18 @@ export struct RecipeDetailHeader {
         .linearGradient({
           direction: GradientDirection.Top,
           repeating: false,
-          colors: [['#E7CDA7', 0.0], ['#D7E8F0', 1.0]]
+          colors: [[UiTokens.accentWarm, 0.0], [UiTokens.primarySoft, 1.0]]
         });
 
       Column({ space: 6 }) {
         Text('这杯酒值得慢慢看')
           .fontSize(15)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#201812');
+          .fontColor(UiTokens.textPrimary);
 
         Text('从风味、材料到调制方式，我们已经帮你整理好这一杯的全部重点。')
           .fontSize(12)
-          .fontColor('#77695A')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(18);
       }
       .layoutWeight(1)
@@ -79,8 +82,8 @@ export struct RecipeDetailHeader {
       Button('了解')
         .height(34)
         .fontSize(12)
-        .fontColor('#3D2C1A')
-        .backgroundColor('#F5E4CE')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarmSoft)
         .borderRadius(14)
         .onClick(() => {
           this.onShowMockHint();
@@ -88,10 +91,10 @@ export struct RecipeDetailHeader {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 16, bottom: 16 })
-    .backgroundColor('#FFFBF5')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#F0DEC5' })
-    .shadow({ radius: 18, color: '#A27A3A12', offsetX: 0, offsetY: 10 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
   }
 
   build() {

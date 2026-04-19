@@ -1,4 +1,5 @@
 import { MaterialDraft, SelectableMaterial } from './BartendingStationMockData';
+import { buildPublicAssetUrl } from '../../../common/constants/ApiConfig';
 
 export interface BarcodeLookupRequest {
   barcode: string;
@@ -14,6 +15,15 @@ export interface MaterialResponse {
   id: number;
   name: string;
   category?: string | null;
+  nameEn?: string | null;
+  imageUrl?: string | null;
+  imageUrlThumb?: string | null;
+  imageUrlCard?: string | null;
+  imageUrlDetail?: string | null;
+  source?: string | null;
+  sourceId?: string | null;
+  description?: string | null;
+  subtitle?: string | null;
 }
 
 export interface BarcodeLookupResponse {
@@ -23,10 +33,11 @@ export interface BarcodeLookupResponse {
   name?: string | null;
   brand?: string | null;
   categoryId?: string | null;
+  imageUrl?: string | null;
+  imageUrlThumb?: string | null;
+  imageUrlCard?: string | null;
+  imageUrlDetail?: string | null;
   source?: string | null;
-  capacityText?: string | null;
-  remainLevel?: string | null;
-  opened?: boolean | null;
   hasItem?: boolean | null;
   tags?: string[] | null;
 }
@@ -44,9 +55,6 @@ export interface SaveScannedUserMaterialRequest {
   brand?: string | null;
   categoryId?: string | null;
   source?: string | null;
-  capacityText?: string | null;
-  remainLevel?: string | null;
-  opened: boolean;
   hasItem: boolean;
   tags: string[];
 }
@@ -56,9 +64,6 @@ export interface SaveManualUserMaterialRequest {
   source?: string | null;
   brand?: string | null;
   categoryId?: string | null;
-  capacityText?: string | null;
-  remainLevel?: string | null;
-  opened: boolean;
   hasItem: boolean;
   tags: string[];
 }
@@ -66,7 +71,6 @@ export interface SaveManualUserMaterialRequest {
 export interface SaveManualUserMaterialBatchItem {
   materialId: number;
   hasItem: boolean;
-  remainLevel?: string | null;
 }
 
 export interface SaveManualUserMaterialsBatchRequest {
@@ -81,8 +85,13 @@ export interface MaterialVisualMeta {
   softColor: string;
 }
 
-const DEFAULT_REMAIN_LEVEL: string = 'full';
-const DISPLAY_REMAIN_LEVEL_FULL: string = '满瓶';
+interface ResolvedMaterialImageUrls {
+  imageUrl?: string;
+  imageUrlThumb?: string;
+  imageUrlCard?: string;
+  imageUrlDetail?: string;
+}
+
 const DEFAULT_NAME: string = '未命名材料';
 
 export function normalizeString(value: string | null | undefined, fallback: string): string {
@@ -142,7 +151,7 @@ export function normalizeCategoryId(value: string | null | undefined): string {
     return 'liqueur';
   }
   if (normalizedValue === 'mixer' || normalizedValue === '软饮 / 糖浆' || normalizedValue === '软饮' ||
-    normalizedValue === '糖浆') {
+    normalizedValue === '糖浆' || normalizedValue === '果汁' || normalizedValue === '辅料') {
     return 'mixer';
   }
   if (normalizedValue === 'fruit' || normalizedValue === '水果' || normalizedValue === '装饰') {
@@ -226,31 +235,30 @@ function buildSourceLabel(source: string): string {
 }
 
 function buildDraftSubtitle(source: string, categoryId: string, hasItem: boolean): string {
+  if (hasItem) {
+    return source === 'scan'
+      ? '已识别成功，你当前标记为有。'
+      : '已从基础材料库加入，你当前标记为有。';
+  }
+
   if (categoryId === 'fruit' || categoryId === 'glassware') {
-    return hasItem ? '已记录为有，可随时调整。' : '已记录为没有，当前不会参与推荐。';
+    return '当前只记录有无状态，你标记为暂时没有。';
   }
 
-  if (source === 'scan') {
-    return '已识别基础信息，可直接加入材料台。';
-  }
-
-  return '已从基础材料库选择，可继续补充库存信息。';
+  return '当前只记录有无状态，你标记为暂时没有。';
 }
 
-export function toDisplayRemainLevel(remainLevel: string | null | undefined): string {
-  const normalizedRemainLevel = normalizeString(remainLevel, DEFAULT_REMAIN_LEVEL);
-  if (normalizedRemainLevel === DEFAULT_REMAIN_LEVEL) {
-    return DISPLAY_REMAIN_LEVEL_FULL;
+function pickAddedAt(dto: UserMaterialResponse | BarcodeLookupResponse): string | undefined {
+  const userMaterialDto = dto as UserMaterialResponse;
+  const updatedAt = toNullableText(userMaterialDto.updatedAt);
+  if (updatedAt !== null) {
+    return updatedAt;
   }
-  return normalizedRemainLevel;
-}
-
-export function toApiRemainLevel(remainLevel: string | null | undefined): string {
-  const normalizedRemainLevel = normalizeString(remainLevel, DEFAULT_REMAIN_LEVEL);
-  if (normalizedRemainLevel === DISPLAY_REMAIN_LEVEL_FULL) {
-    return DEFAULT_REMAIN_LEVEL;
+  const createdAt = toNullableText(userMaterialDto.createdAt);
+  if (createdAt !== null) {
+    return createdAt;
   }
-  return normalizedRemainLevel;
+  return undefined;
 }
 
 export function toMaterialDraft(dto: BarcodeLookupResponse | UserMaterialResponse): MaterialDraft {
@@ -258,6 +266,7 @@ export function toMaterialDraft(dto: BarcodeLookupResponse | UserMaterialRespons
   const visualMeta = getMaterialVisualMeta(categoryId);
   const source = normalizeString(dto.source, 'scan') === 'scan' ? 'scan' : 'manual';
   const hasItem = dto.hasItem !== false;
+  const resolvedImageUrls = resolveMaterialImageUrls(dto);
 
   return {
     id: buildDraftId(dto),
@@ -267,11 +276,16 @@ export function toMaterialDraft(dto: BarcodeLookupResponse | UserMaterialRespons
     subtitle: buildDraftSubtitle(source, visualMeta.categoryId, hasItem),
     brand: normalizeString(dto.brand, source === 'scan' ? '未识别品牌' : '未填写'),
     categoryId: visualMeta.categoryId,
+    imageUrl: resolvedImageUrls.imageUrl,
+    imageUrlThumb: resolvedImageUrls.imageUrlThumb,
+    imageUrlCard: resolvedImageUrls.imageUrlCard,
+    imageUrlDetail: resolvedImageUrls.imageUrlDetail,
     barcode: normalizeBarcode(dto.barcode),
+    addedAt: pickAddedAt(dto),
     materialId: typeof dto.materialId === 'number' ? dto.materialId : undefined,
-    capacityText: normalizeString(dto.capacityText, ''),
-    remainLevel: toDisplayRemainLevel(dto.remainLevel),
-    opened: dto.opened === true,
+    capacityText: '',
+    remainLevel: '满瓶',
+    opened: false,
     hasItem,
     tags: normalizeTags(dto.tags),
     note: '',
@@ -281,41 +295,66 @@ export function toMaterialDraft(dto: BarcodeLookupResponse | UserMaterialRespons
   };
 }
 
-function buildSelectableSubtitle(categoryId: string): string {
-  if (categoryId === 'fruit') {
-    return '高频鲜果材料，适合快速记录有无。';
+function pickFirstImageUrl(candidates: Array<string | undefined>): string | undefined {
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate;
+    }
   }
-  if (categoryId === 'glassware') {
-    return '补齐杯具后，出杯推荐会更准确。';
-  }
-  if (categoryId === 'mixer') {
-    return '常见软饮或糖浆，建议先加入再补充库存。';
-  }
-  if (categoryId === 'liqueur') {
-    return '风味酒会直接影响推荐结果。';
-  }
-  return '常用基础材料，可直接加入材料台。';
+  return undefined;
 }
 
-function buildSelectableQuickNote(categoryId: string): string {
-  if (categoryId === 'fruit' || categoryId === 'glassware') {
-    return '支持只记录有无状态。';
+function normalizeImageUrl(value: string | null | undefined): string | undefined {
+  const normalizedValue = normalizeString(value, '');
+  if (normalizedValue.length === 0) {
+    return undefined;
   }
-  return '加入后可继续补充容量和剩余量。';
+  return buildPublicAssetUrl(normalizedValue);
+}
+
+function resolveMaterialImageUrls(dto: MaterialResponse | BarcodeLookupResponse): ResolvedMaterialImageUrls {
+  const rawImageUrl = normalizeImageUrl(dto.imageUrl);
+  const rawImageUrlThumb = normalizeImageUrl(dto.imageUrlThumb);
+  const rawImageUrlCard = normalizeImageUrl(dto.imageUrlCard);
+  const rawImageUrlDetail = normalizeImageUrl(dto.imageUrlDetail);
+  const imageUrl = pickFirstImageUrl([rawImageUrl, rawImageUrlCard, rawImageUrlThumb, rawImageUrlDetail]);
+  const imageUrlThumb = pickFirstImageUrl([rawImageUrlThumb, rawImageUrlCard, imageUrl]);
+  const imageUrlCard = pickFirstImageUrl([rawImageUrlCard, rawImageUrlThumb, imageUrl]);
+  const imageUrlDetail = pickFirstImageUrl([rawImageUrlDetail, rawImageUrl, rawImageUrlCard, rawImageUrlThumb, imageUrl]);
+
+  return {
+    imageUrl,
+    imageUrlThumb,
+    imageUrlCard,
+    imageUrlDetail
+  };
+}
+
+function resolveMaterialDescription(dto: MaterialResponse): string {
+  return normalizeString(dto.description, normalizeString(dto.subtitle, ''));
 }
 
 export function toSelectableMaterial(dto: MaterialResponse): SelectableMaterial {
-  const categoryId = normalizeCategoryId(dto.category);
+  const categoryName = normalizeString(dto.category, '');
+  const categoryId = categoryName.length > 0 ? normalizeCategoryId(categoryName) : 'other';
   const visualMeta = getMaterialVisualMeta(categoryId);
+  const description = resolveMaterialDescription(dto);
+  const resolvedImageUrls = resolveMaterialImageUrls(dto);
 
   return {
     id: `material-${dto.id.toString()}`,
     materialId: dto.id,
-    name: normalizeString(dto.name, DEFAULT_NAME),
-    subtitle: buildSelectableSubtitle(categoryId),
+    name: normalizeString(dto.name, ''),
+    imageUrl: resolvedImageUrls.imageUrl,
+    imageUrlThumb: resolvedImageUrls.imageUrlThumb,
+    imageUrlCard: resolvedImageUrls.imageUrlCard,
+    imageUrlDetail: resolvedImageUrls.imageUrlDetail,
+    description,
+    subtitle: description,
     categoryId: visualMeta.categoryId,
-    categoryName: normalizeString(dto.category, visualMeta.categoryName),
-    quickNote: buildSelectableQuickNote(categoryId),
+    categoryName,
+    quickNote: '',
     badge: visualMeta.badge,
     accentColor: visualMeta.accentColor,
     softColor: visualMeta.softColor,

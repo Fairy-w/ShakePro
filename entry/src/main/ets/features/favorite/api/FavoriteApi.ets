@@ -1,9 +1,11 @@
 import {
+  FAVORITES_PATH,
   FAVORITE_AI_COCKTAILS_PATH,
   FAVORITE_AI_COCKTAIL_STATUS_PATH
 } from '../../../common/constants/ApiConfig';
 import { ApiResponse } from '../../../common/network/ApiResponse';
 import { httpClient, HttpRequestOptions } from '../../../common/network/HttpClient';
+import { CocktailListItemDto } from '../../cocktail/model/CocktailDetailModels';
 import {
   FavoriteAiCocktailListQuery,
   FavoriteAiCocktailListResponse,
@@ -13,6 +15,24 @@ import {
 } from '../model/FavoriteAiCocktailModels';
 
 class FavoriteApi {
+  getSystemFavoriteList(): Promise<ApiResponse<CocktailListItemDto[]>> {
+    return httpClient.get<CocktailListItemDto[]>(FAVORITES_PATH, {
+      attachToken: true
+    } as HttpRequestOptions);
+  }
+
+  addSystemFavorite(cocktailId: number | string): Promise<ApiResponse<Object>> {
+    return httpClient.post<Object>(`${FAVORITES_PATH}/${cocktailId}`, {
+      attachToken: true
+    } as HttpRequestOptions);
+  }
+
+  removeSystemFavorite(cocktailId: number | string): Promise<ApiResponse<Object>> {
+    return httpClient.delete<Object>(`${FAVORITES_PATH}/${cocktailId}`, {
+      attachToken: true
+    } as HttpRequestOptions);
+  }
+
   saveAiCocktail(data: SaveAiCocktailFavoriteRequest): Promise<ApiResponse<FavoriteAiCocktailMutationResponse>> {
     return httpClient.post<FavoriteAiCocktailMutationResponse>(FAVORITE_AI_COCKTAILS_PATH, {
       data,

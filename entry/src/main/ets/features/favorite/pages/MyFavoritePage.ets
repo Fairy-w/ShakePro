@@ -2,17 +2,29 @@ import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
 import { sessionStore } from '../../../common/storage/SessionStore';
+import { CocktailListItemDto } from '../../cocktail/model/CocktailDetailModels';
 import { FavoriteRecipeCard } from '../components/FavoriteRecipeCard';
+import { SystemFavoriteRecipeCard } from '../components/SystemFavoriteRecipeCard';
 import { FavoriteAiCocktailItem } from '../model/FavoriteAiCocktailModels';
 import { favoriteRepository } from '../repository/FavoriteRepository';
+import { UiTokens } from '../../../common/constants/UiTokens';
+
+const SYSTEM_FAVORITE_TAB: string = 'system';
+const AI_FAVORITE_TAB: string = 'ai';
 
 @Entry({ routeName: 'MyFavoritePage' })
 @Component
 export struct MyFavoritePage {
   @State private isLoading: boolean = true;
   @State private isAuthorized: boolean = false;
-  @State private errorMessage: string = '';
+  @State private activeTab: string = SYSTEM_FAVORITE_TAB;
+  @State private systemFavorites: CocktailListItemDto[] = [];
+  @State private isSystemLoading: boolean = false;
+  @State private systemErrorMessage: string = '';
+  @State private removingSystemCocktailId: number = -1;
   @State private favorites: FavoriteAiCocktailItem[] = [];
+  @State private aiErrorMessage: string = '';
+  @State private isAiLoading: boolean = false;
   @State private removingFavoriteId: number = -1;
   @State private currentCatalogIndex: number = 0;
 
@@ -47,7 +59,8 @@ export struct MyFavoritePage {
 
   private async loadFavorites(): Promise<void> {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.systemErrorMessage = '';
+    this.aiErrorMessage = '';
 
     try {
       await this.ensureSessionStore();
@@ -55,10 +68,53 @@ export struct MyFavoritePage {
       this.isAuthorized = authorization.trim().length > 0;
 
       if (!this.isAuthorized) {
+        this.systemFavorites = [];
         this.favorites = [];
+        this.currentCatalogIndex = 0;
+        this.isCatalogAutoScrolling = false;
+        this.catalogTargetIndex = -1;
         return;
       }
 
+      await this.loadSystemFavorites(true);
+      await this.loadAiFavorites(true);
+    } catch (error) {
+      const message: string = this.resolveErrorMessage(error, '加载收藏失败，请稍后再试');
+      this.isAuthorized = true;
+      this.systemFavorites = [];
+      this.favorites = [];
+      this.systemErrorMessage = message;
+      this.aiErrorMessage = message;
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  private async loadSystemFavorites(isInitialLoad: boolean = false): Promise<void> {
+    if (!isInitialLoad) {
+      this.isSystemLoading = true;
+    }
+    this.systemErrorMessage = '';
+
+    try {
+      this.systemFavorites = await favoriteRepository.getSystemFavoriteList();
+    } catch (error) {
+      this.systemFavorites = [];
+      this.systemErrorMessage = this.resolveErrorMessage(error, '加载系统收藏失败，请稍后再试');
+    } finally {
+      if (!isInitialLoad) {
+        this.isSystemLoading = false;
+      }
+    }
+  }
+
+  private async loadAiFavorites(isInitialLoad: boolean = false): Promise<void> {
+    if (!isInitialLoad) {
+      this.isAiLoading = true;
+    }
+    this.aiErrorMessage = '';
+
+    try {
       const response = await favoriteRepository.getAiCocktailList({
         pageNo: 1,
         pageSize: 100,
@@ -69,9 +125,38 @@ export struct MyFavoritePage {
       this.isCatalogAutoScrolling = false;
       this.catalogTargetIndex = -1;
     } catch (error) {
-      this.errorMessage = this.resolveErrorMessage(error, '加载收藏失败，请稍后再试');
+      this.favorites = [];
+      this.aiErrorMessage = this.resolveErrorMessage(error, '加载收藏失败，请稍后再试');
     } finally {
-      this.isLoading = false;
+      if (!isInitialLoad) {
+        this.isAiLoading = false;
+      }
+    }
+  }
+
+  private openSystemFavoriteDetail(item: CocktailListItemDto): void {
+    router.pushUrl({
+      url: 'features/recipe/pages/RecipeDetailPage',
+      params: {
+        cocktailId: item.id
+      }
+    }, 3000);
+  }
+
+  private async removeSystemFavorite(item: CocktailListItemDto): Promise<void> {
+    if (this.removingSystemCocktailId !== -1) {
+      return;
+    }
+
+    this.removingSystemCocktailId = item.id;
+    try {
+      await favoriteRepository.removeSystemFavorite(item.id);
+      this.systemFavorites = this.systemFavorites.filter((favorite: CocktailListItemDto): boolean => favorite.id !== item.id);
+      promptAction.showToast({ message: '已取消收藏' });
+    } catch (error) {
+      promptAction.showToast({ message: this.resolveErrorMessage(error, '取消收藏失败，请稍后再试') });
+    } finally {
+      this.removingSystemCocktailId = -1;
     }
   }
 
@@ -122,13 +207,13 @@ export struct MyFavoritePage {
           .width(28)
           .height(4)
           .borderRadius(2)
-          .backgroundColor('#FFF4E2');
+          .backgroundColor(UiTokens.accentWarmSoft);
       }
 
       Text(item.name)
         .fontSize(11)
         .fontWeight(this.currentCatalogIndex === index ? FontWeight.Medium : FontWeight.Regular)
-        .fontColor(this.currentCatalogIndex === index ? '#23160C' : '#E2D1B6')
+        .fontColor(this.currentCatalogIndex === index ? UiTokens.textPrimary : UiTokens.textSecondary)
         .textAlign(TextAlign.Center);
     }
     .constraintSize({ maxWidth: 220 })
@@ -138,15 +223,15 @@ export struct MyFavoritePage {
       top: this.currentCatalogIndex === index ? 10 : 12,
       bottom: 12
     })
-    .backgroundColor(this.currentCatalogIndex === index ? '#E3BE8D' : '#141816')
+    .backgroundColor(this.currentCatalogIndex === index ? UiTokens.accentWarm : UiTokens.surfaceSecondary)
     .borderRadius(18)
     .border({
       width: 1,
-      color: this.currentCatalogIndex === index ? '#F0D3AA' : '#2A2F2A'
+      color: this.currentCatalogIndex === index ? UiTokens.borderWarm : UiTokens.borderPrimary
     })
     .shadow({
       radius: this.currentCatalogIndex === index ? 16 : 8,
-      color: this.currentCatalogIndex === index ? '#D8B07A33' : '#00000012',
+      color: this.currentCatalogIndex === index ? UiTokens.shadowMedium : UiTokens.shadowSoft,
       offsetX: 0,
       offsetY: this.currentCatalogIndex === index ? 8 : 4
     })
@@ -160,13 +245,39 @@ export struct MyFavoritePage {
   }
 
   @Builder
+  private buildTabItem(tabKey: string, title: string, count: number) {
+    Column({ space: 6 }) {
+      Text(title)
+        .fontSize(14)
+        .fontWeight(this.activeTab === tabKey ? FontWeight.Bold : FontWeight.Medium)
+        .fontColor(this.activeTab === tabKey ? UiTokens.textInverse : UiTokens.textSecondary);
+
+      Text(`${count} 项`)
+        .fontSize(11)
+        .fontColor(this.activeTab === tabKey ? UiTokens.accentWarmSoft : UiTokens.textTertiary);
+    }
+    .padding({ left: 18, right: 18, top: 12, bottom: 12 })
+    .backgroundColor(this.activeTab === tabKey ? UiTokens.brandStrong : UiTokens.surfacePrimary)
+    .borderRadius(18)
+    .border({ width: 1, color: this.activeTab === tabKey ? UiTokens.borderStrong : UiTokens.borderPrimary })
+    .layoutWeight(1)
+    .onClick(() => {
+      this.activeTab = tabKey;
+    });
+  }
+
+  @Builder
   private buildTopBar() {
     Row() {
-      Column() {
+      Column({ space: 4 }) {
         Text('我的收藏')
           .fontSize(28)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#F7F0E4');
+          .fontColor(UiTokens.textPrimary);
+
+        Text('系统酒谱与 AI 结果都收拢在这里，方便回看和继续生成。')
+          .fontSize(12)
+          .fontColor(UiTokens.textSecondary);
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start);
@@ -175,10 +286,10 @@ export struct MyFavoritePage {
         .height(38)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#F3E6D2')
-        .backgroundColor('#171A18')
+        .fontColor(UiTokens.textAccent)
+        .backgroundColor(UiTokens.surfacePrimary)
         .borderRadius(16)
-        .border({ width: 1, color: '#2A2E2A' })
+        .border({ width: 1, color: UiTokens.borderPrimary })
         .padding({ left: 14, right: 14 })
         .onClick(() => {
           router.back();
@@ -189,19 +300,28 @@ export struct MyFavoritePage {
   }
 
   @Builder
+  private buildTabBar() {
+    Row({ space: 10 }) {
+      this.buildTabItem(SYSTEM_FAVORITE_TAB, '系统收藏', this.systemFavorites.length);
+      this.buildTabItem(AI_FAVORITE_TAB, 'AI 收藏', this.favorites.length);
+    }
+    .width('100%');
+  }
+
+  @Builder
   private buildStickyCatalog() {
     Column({ space: 10 }) {
       Row() {
         Text('收藏目录')
           .fontSize(13)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#F4E7D3');
+          .fontColor(UiTokens.accentWarmSoft);
 
         Blank();
 
         Text(`${this.currentCatalogIndex + 1} / ${this.favorites.length}`)
           .fontSize(10)
-          .fontColor('#A89A86');
+          .fontColor(UiTokens.textTertiary);
       }
       .width('100%');
       List({ scroller: this.catalogScroller, space: 10, initialIndex: 0 }) {
@@ -233,10 +353,10 @@ export struct MyFavoritePage {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-    .backgroundColor('#111412')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(22)
-    .border({ width: 1, color: '#232823' })
-    .shadow({ radius: 12, color: '#00000022', offsetX: 0, offsetY: 8 });
+    .border({ width: 1, color: UiTokens.borderPrimary })
+    .shadow({ radius: 12, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 8 });
   }
 
   @Builder
@@ -245,14 +365,14 @@ export struct MyFavoritePage {
       Text('正在整理你的收藏...')
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#F5ECDD');
+        .fontColor(UiTokens.textPrimary);
 
       Column()
         .width('100%')
         .height(220)
         .borderRadius(24)
-        .backgroundColor('#161917')
-        .border({ width: 1, color: '#242824' });
+        .backgroundColor(UiTokens.surfaceSecondary)
+        .border({ width: 1, color: UiTokens.borderPrimary });
     }
     .width('100%')
     .padding({ top: 28 });
@@ -261,15 +381,17 @@ export struct MyFavoritePage {
   @Builder
   private buildUnauthorizedState() {
     Column({ space: 16 }) {
-      Text('登录后才能查看收藏的 AI 配方')
+      Text(this.activeTab === SYSTEM_FAVORITE_TAB ? '登录后才能查看系统收藏' : '登录后才能查看收藏的 AI 配方')
         .fontSize(20)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#F7F0E4')
+        .fontColor(UiTokens.textPrimary)
         .textAlign(TextAlign.Center);
 
-      Text('先登录账号，再把喜欢的推荐长期保存下来。')
+      Text(this.activeTab === SYSTEM_FAVORITE_TAB
+        ? '先登录账号，再把喜欢的酒谱保存到系统收藏里。'
+        : '先登录账号，再把喜欢的推荐长期保存下来。')
         .fontSize(13)
-        .fontColor('#A79A88')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20)
         .textAlign(TextAlign.Center);
 
@@ -278,8 +400,8 @@ export struct MyFavoritePage {
         .height(46)
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#241A10')
-        .backgroundColor('#D4B181')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarm)
         .borderRadius(16)
         .onClick(() => {
           router.pushUrl({ url: 'features/auth/pages/LoginPage' });
@@ -287,78 +409,132 @@ export struct MyFavoritePage {
     }
     .width('100%')
     .padding({ left: 20, right: 20, top: 26, bottom: 26 })
-    .backgroundColor('#121513')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#232823' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .margin({ top: 18 });
+  }
+
+  @Builder
+  private buildSystemLoadingState() {
+    Column({ space: 14 }) {
+      Text('正在同步系统收藏...')
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(UiTokens.textPrimary);
+
+      Column()
+        .width('100%')
+        .height(220)
+        .borderRadius(24)
+        .backgroundColor(UiTokens.surfaceSecondary)
+        .border({ width: 1, color: UiTokens.borderPrimary });
+    }
+    .width('100%')
+    .padding({ top: 28 });
   }
 
   @Builder
   private buildErrorState() {
     Column({ space: 14 }) {
-      Text('这次没能顺利加载收藏')
+      Text(this.activeTab === SYSTEM_FAVORITE_TAB ? '这次没能顺利加载系统收藏' : '这次没能顺利加载收藏')
         .fontSize(20)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#F7F0E4');
+        .fontColor(UiTokens.textPrimary);
 
-      Text(this.errorMessage)
+      Text(this.activeTab === SYSTEM_FAVORITE_TAB ? this.systemErrorMessage : this.aiErrorMessage)
         .fontSize(13)
-        .fontColor('#B49C90')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20);
 
       Button('重新加载')
         .height(42)
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#241A10')
-        .backgroundColor('#D4B181')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarm)
         .borderRadius(15)
         .onClick(() => {
-          void this.loadFavorites();
+          if (this.activeTab === SYSTEM_FAVORITE_TAB) {
+            void this.loadSystemFavorites();
+          } else {
+            void this.loadAiFavorites();
+          }
         });
     }
     .width('100%')
     .padding({ left: 20, right: 20, top: 22, bottom: 22 })
-    .backgroundColor('#121513')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#232823' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .margin({ top: 18 });
   }
 
   @Builder
   private buildEmptyState() {
     Column({ space: 14 }) {
-      Text('你还没有收藏的配方')
+      Text(this.activeTab === SYSTEM_FAVORITE_TAB ? '你还没有收藏系统酒谱' : '你还没有收藏的配方')
         .fontSize(20)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#F7F0E4');
+        .fontColor(UiTokens.textPrimary);
 
-      Text('下次在 AI 调酒页看到喜欢的那一杯，点一下收藏就会出现在这里。')
+      Text(this.activeTab === SYSTEM_FAVORITE_TAB
+        ? '下次在配方详情页看到喜欢的那一杯，点一下收藏就会出现在这里。'
+        : '下次在 AI 调酒页看到喜欢的那一杯，点一下收藏就会出现在这里。')
         .fontSize(13)
-        .fontColor('#A79A88')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20);
 
-      Button('去 AI 调酒')
+      Button(this.activeTab === SYSTEM_FAVORITE_TAB ? '去配方库' : '去 AI 调酒')
         .height(42)
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#241A10')
-        .backgroundColor('#D4B181')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarm)
         .borderRadius(15)
         .onClick(() => {
-          router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' });
+          if (this.activeTab === SYSTEM_FAVORITE_TAB) {
+            router.pushUrl({ url: 'features/recipe/pages/RecipeLibraryPage' });
+          } else {
+            router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' });
+          }
         });
     }
     .width('100%')
     .padding({ left: 20, right: 20, top: 22, bottom: 22 })
-    .backgroundColor('#121513')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#232823' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .margin({ top: 18 });
   }
 
   @Builder
-  private buildListState() {
+  private buildSystemListState() {
+    List({ space: 16 }) {
+      ForEach(this.systemFavorites, (item: CocktailListItemDto) => {
+        ListItem() {
+          SystemFavoriteRecipeCard({
+            item,
+            isRemoving: this.removingSystemCocktailId === item.id,
+            onOpen: (favorite: CocktailListItemDto) => {
+              this.openSystemFavoriteDetail(favorite);
+            },
+            onRemove: (favorite: CocktailListItemDto) => {
+              void this.removeSystemFavorite(favorite);
+            }
+          });
+        }
+      }, (item: CocktailListItemDto) => String(item.id));
+    }
+    .width('100%')
+    .layoutWeight(1)
+    .scrollBar(BarState.Off)
+    .listDirection(Axis.Vertical)
+    .padding({ top: 6, bottom: 12 });
+  }
+
+  @Builder
+  private buildAiListState() {
     Column({ space: 10 }) {
       this.buildStickyCatalog();
       List({ scroller: this.favoriteScroller, space: 16 }) {
@@ -404,26 +580,46 @@ export struct MyFavoritePage {
     .padding({ top: 4, bottom: 12 });
   }
 
+  @Builder
+  private buildCurrentTabContent() {
+    if (!this.isAuthorized) {
+      this.buildUnauthorizedState();
+    } else if (this.activeTab === SYSTEM_FAVORITE_TAB) {
+      if (this.isSystemLoading) {
+        this.buildSystemLoadingState();
+      } else if (this.systemErrorMessage.length > 0) {
+        this.buildErrorState();
+      } else if (this.systemFavorites.length === 0) {
+        this.buildEmptyState();
+      } else {
+        this.buildSystemListState();
+      }
+    } else if (this.isAiLoading) {
+      this.buildLoadingState();
+    } else if (this.aiErrorMessage.length > 0) {
+      this.buildErrorState();
+    } else if (this.favorites.length === 0) {
+      this.buildEmptyState();
+    } else {
+      this.buildAiListState();
+    }
+  }
+
   build() {
-    Column({ space: 6 }) {
+    Column({ space: 12 }) {
       this.buildTopBar();
 
       if (this.isLoading) {
         this.buildLoadingState();
-      } else if (!this.isAuthorized) {
-        this.buildUnauthorizedState();
-      } else if (this.errorMessage.length > 0) {
-        this.buildErrorState();
-      } else if (this.favorites.length === 0) {
-        this.buildEmptyState();
       } else {
-        this.buildListState();
+        this.buildTabBar();
+        this.buildCurrentTabContent();
       }
     }
     .padding({ left: 18, right: 18, top: 16, bottom: 20 })
     .width('100%')
     .height('100%')
-    .backgroundColor('#0D0F0E')
+    .backgroundColor(UiTokens.pageBackground)
     .alignItems(HorizontalAlign.Start);
   }
 }

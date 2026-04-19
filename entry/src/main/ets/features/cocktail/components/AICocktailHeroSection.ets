@@ -1,3 +1,5 @@
+import { UiTokens } from '../../../common/constants/UiTokens';
+
 @Component
 export struct AICocktailHeroSection {
   @Prop title: string = '';
@@ -16,16 +18,17 @@ export struct AICocktailHeroSection {
         ForEach(this.promptSamples, (sample: string) => {
           Button(sample)
             .fontSize(12)
-            .fontColor('#E9D8BD')
-            .backgroundColor('#141715')
+            .fontColor(UiTokens.textAccent)
+            .backgroundColor(UiTokens.surfacePrimary)
             .borderRadius(16)
-            .border({ width: 1, color: '#2A2F2A' })
+            .border({ width: 1, color: UiTokens.borderPrimary })
             .padding({ left: 14, right: 14, top: 10, bottom: 10 })
             .onClick(() => {
               this.onSelectSample(sample);
             });
         }, (sample: string) => sample);
       }
+      .padding({ right: 16 });
     }
     .width('100%')
     .scrollable(ScrollDirection.Horizontal)
@@ -34,17 +37,17 @@ export struct AICocktailHeroSection {
 
   build() {
     Column({ space: 16 }) {
-      Column({ space: 6 }) {
+      Column({ space: 8 }) {
         Text(this.title)
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#F8F1E5')
+          .fontColor(UiTokens.textPrimary)
           .textAlign(TextAlign.Center)
-          .lineHeight(42);
+          .lineHeight(40);
 
         Text(this.description)
           .fontSize(13)
-          .fontColor('#A69A88')
+          .fontColor(UiTokens.textSecondary)
           .textAlign(TextAlign.Center)
           .lineHeight(20);
       }
@@ -56,30 +59,30 @@ export struct AICocktailHeroSection {
           .width('100%')
           .height(56)
           .fontSize(14)
-          .fontColor('#F7EEE0')
-          .placeholderColor('#7F786F')
-          .backgroundColor('#161917')
+          .fontColor(UiTokens.textPrimary)
+          .placeholderColor(UiTokens.textTertiary)
+          .backgroundColor(UiTokens.surfacePrimary)
           .borderRadius(22)
           .padding({ left: 18, right: 18 })
-          .border({ width: 1, color: '#2D322D' })
+          .border({ width: 1, color: UiTokens.borderPrimary })
           .onChange((value: string) => {
             this.onInputChange(value);
           });
 
         Button(this.isLoading ? '正在为你配酒...' : '开始推荐')
-          .width('40%')
+          .width('46%')
           .height(54)
           .fontSize(15)
           .fontWeight(FontWeight.Bold)
           .enabled(!this.isLoading)
-          .fontColor('#241A10')
-          .backgroundColor('#D4B181')
+          .fontColor(UiTokens.textInverse)
+          .backgroundColor(UiTokens.aiPrimary)
           .borderRadius(20)
           .onClick(() => {
             this.onSubmit();
           });
       }
-      .width('88%')
+      .width('92%')
       .constraintSize({ maxWidth: 680 });
 
       this.buildPromptSamples();

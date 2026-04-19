@@ -1,5 +1,6 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
+import { CocktailListItemDto } from '../../cocktail/model/CocktailDetailModels';
 import { favoriteApi } from '../api/FavoriteApi';
 import {
   FavoriteAiCocktailListQuery,
@@ -13,6 +14,34 @@ const FAVORITE_REPO_LOG_DOMAIN: number = 0x0000;
 const FAVORITE_REPO_LOG_TAG: string = 'ShakeProFavoriteRepo';
 
 class FavoriteRepository {
+  async getSystemFavoriteList(): Promise<CocktailListItemDto[]> {
+    hilog.info(FAVORITE_REPO_LOG_DOMAIN, FAVORITE_REPO_LOG_TAG, 'get system favorite list');
+    const response = await favoriteApi.getSystemFavoriteList();
+    return this.unwrapListResponse<CocktailListItemDto>(response, '获取系统收藏失败');
+  }
+
+  async addSystemFavorite(cocktailId: number | string): Promise<void> {
+    hilog.info(
+      FAVORITE_REPO_LOG_DOMAIN,
+      FAVORITE_REPO_LOG_TAG,
+      'add system favorite cocktailId=%{public}s',
+      String(cocktailId)
+    );
+    const response = await favoriteApi.addSystemFavorite(cocktailId);
+    this.ensureSuccess(response, '收藏失败');
+  }
+
+  async removeSystemFavorite(cocktailId: number | string): Promise<void> {
+    hilog.info(
+      FAVORITE_REPO_LOG_DOMAIN,
+      FAVORITE_REPO_LOG_TAG,
+      'remove system favorite cocktailId=%{public}s',
+      String(cocktailId)
+    );
+    const response = await favoriteApi.removeSystemFavorite(cocktailId);
+    this.ensureSuccess(response, '取消收藏失败');
+  }
+
   async saveAiCocktail(data: SaveAiCocktailFavoriteRequest): Promise<FavoriteAiCocktailMutationResponse> {
     hilog.info(
       FAVORITE_REPO_LOG_DOMAIN,
@@ -60,12 +89,37 @@ class FavoriteRepository {
     return this.unwrapResponse<FavoriteAiCocktailStatusResponse>(response, '获取收藏状态失败');
   }
 
+  private unwrapListResponse<T>(response: ApiResponse<T[]>, fallbackMessage: string): T[] {
+    this.ensureSuccess(response, fallbackMessage);
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  private ensureSuccess<T>(response: ApiResponse<T>, fallbackMessage: string): void {
+    if (isApiSuccess(response)) {
+      return;
+    }
+    hilog.error(
+      FAVORITE_REPO_LOG_DOMAIN,
+      FAVORITE_REPO_LOG_TAG,
+      'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
+      String(response.code),
+      response.message ?? '',
+      response.traceId ?? ''
+    );
+    throw new HttpRequestError({
+      message: getApiMessage(response, fallbackMessage),
+      code: response.code,
+      traceId: response.traceId
+    });
+  }
+
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
-    if (!isApiSuccess(response) || response.data === undefined || response.data === null) {
+    this.ensureSuccess(response, fallbackMessage);
+    if (response.data === undefined || response.data === null) {
       hilog.error(
         FAVORITE_REPO_LOG_DOMAIN,
         FAVORITE_REPO_LOG_TAG,
-        'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
+        'api data missing after success code=%{public}s message=%{public}s traceId=%{public}s',
         String(response.code),
         response.message ?? '',
         response.traceId ?? ''

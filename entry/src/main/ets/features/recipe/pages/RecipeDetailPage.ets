@@ -1,6 +1,7 @@
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
+import { UiTokens } from '../../../common/constants/UiTokens';
 import { RecipeDetailHeader } from '../components/RecipeDetailHeader';
 import { RecipeFlavorSection } from '../components/RecipeFlavorSection';
 import { RecipeHeroCard } from '../components/RecipeHeroCard';
@@ -9,6 +10,7 @@ import { RecipeProductionCapsule } from '../components/RecipeProductionCapsule';
 import { RecipeServeSection } from '../components/RecipeServeSection';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { cocktailRepository } from '../../cocktail/repository/CocktailRepository';
+import { favoriteRepository } from '../../favorite/repository/FavoriteRepository';
 import { mapCocktailDetailToSystemRecipe } from '../model/RecipeDetailMapper';
 import {
   EMPTY_SYSTEM_RECIPE,
@@ -32,7 +34,8 @@ export struct RecipeDetailPage {
   @State private traceId: string = '';
   @State private isMinimalView: boolean = false;
   @State private isPhotoPreviewVisible: boolean = false;
-  @State private bookmarkedRecipeIds: string[] = [];
+  @State private isSystemFavorited: boolean = false;
+  @State private isBookmarkBusy: boolean = false;
 
   aboutToAppear(): void {
     void this.loadRecipeDetail();
@@ -102,12 +105,51 @@ export struct RecipeDetailPage {
     return '';
   }
 
+  private resolveFavoriteErrorMessage(error: Object, fallbackMessage: string = '收藏失败，请稍后再试'): string {
+    const errorObject = error as Record<string, Object>;
+    const code = errorObject['code'];
+    const message = errorObject['message'];
+
+    if (typeof code === 'number' && code === 40100) {
+      return '登录已失效，请重新登录后再收藏';
+    }
+
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+
+    return fallbackMessage;
+  }
+
+  private async hasAuthorization(): Promise<boolean> {
+    await this.ensureSessionStore();
+    const authorization: string = await sessionStore.getAuthorizationValue();
+    return authorization.trim().length > 0;
+  }
+
+  private async syncSystemFavoriteState(cocktailId: string): Promise<void> {
+    this.isSystemFavorited = false;
+
+    if (!(await this.hasAuthorization())) {
+      return;
+    }
+
+    try {
+      const favorites = await favoriteRepository.getSystemFavoriteList();
+      this.isSystemFavorited = favorites.some((item): boolean => String(item.id) === cocktailId);
+    } catch (_) {
+      this.isSystemFavorited = false;
+    }
+  }
+
   private async loadRecipeDetail(): Promise<void> {
     const routeCocktailId = this.resolveRouteCocktailId();
     this.isLoading = true;
     this.errorMessage = '';
     this.traceId = '';
     this.isPhotoPreviewVisible = false;
+    this.isSystemFavorited = false;
+    this.isBookmarkBusy = false;
 
     if (!routeCocktailId || !this.isNumericId(routeCocktailId)) {
       this.isLoading = false;
@@ -119,6 +161,7 @@ export struct RecipeDetailPage {
       await this.ensureSessionStore();
       const detail = await cocktailRepository.getCocktailDetail(routeCocktailId);
       this.recipe = mapCocktailDetailToSystemRecipe(detail);
+      await this.syncSystemFavoriteState(routeCocktailId);
     } catch (error) {
       this.errorMessage = this.resolveErrorMessage(error as Object);
       this.traceId = this.resolveTraceId(error as Object);
@@ -129,18 +172,42 @@ export struct RecipeDetailPage {
   }
 
   private isCurrentRecipeBookmarked(): boolean {
-    return this.bookmarkedRecipeIds.indexOf(this.recipe.id) !== -1;
+    return this.isSystemFavorited;
   }
 
-  private toggleBookmark(): void {
-    if (this.isCurrentRecipeBookmarked()) {
-      this.bookmarkedRecipeIds = this.bookmarkedRecipeIds.filter((recipeId: string): boolean => recipeId !== this.recipe.id);
-      promptAction.showToast({ message: '已取消收藏' });
+  private async toggleBookmark(): Promise<void> {
+    if (this.isBookmarkBusy) {
       return;
     }
 
-    this.bookmarkedRecipeIds = this.bookmarkedRecipeIds.concat([this.recipe.id]);
-    promptAction.showToast({ message: '已加入收藏' });
+    const cocktailId = this.resolveRouteCocktailId();
+    if (!cocktailId || !this.isNumericId(cocktailId)) {
+      promptAction.showToast({ message: '缺少有效的鸡尾酒 ID，暂时无法收藏' });
+      return;
+    }
+
+    if (!(await this.hasAuthorization())) {
+      promptAction.showToast({ message: '请先登录后再收藏' });
+      router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+      return;
+    }
+
+    this.isBookmarkBusy = true;
+    try {
+      if (this.isSystemFavorited) {
+        await favoriteRepository.removeSystemFavorite(cocktailId);
+        this.isSystemFavorited = false;
+        promptAction.showToast({ message: '已取消收藏' });
+      } else {
+        await favoriteRepository.addSystemFavorite(cocktailId);
+        this.isSystemFavorited = true;
+        promptAction.showToast({ message: '已加入我的收藏' });
+      }
+    } catch (error) {
+      promptAction.showToast({ message: this.resolveFavoriteErrorMessage(error as Object) });
+    } finally {
+      this.isBookmarkBusy = false;
+    }
   }
 
   private showMockDataHint(): void {
@@ -177,24 +244,24 @@ export struct RecipeDetailPage {
       LoadingProgress()
         .width(26)
         .height(26)
-        .color('#B68961');
+        .color(UiTokens.accentWarm);
 
       Text('正在加载鸡尾酒详情...')
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#56473A');
+        .fontColor(UiTokens.textSecondary);
 
       Text('已连接后端接口，正在同步这杯酒的风味、材料和步骤。')
         .fontSize(12)
-        .fontColor('#8A7968')
+        .fontColor(UiTokens.textTertiary)
         .textAlign(TextAlign.Center)
         .lineHeight(18);
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 26, bottom: 26 })
-    .backgroundColor('#FFFBF5')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#F0DEC5' });
+    .border({ width: 1, color: UiTokens.borderWarm });
   }
 
   @Builder
@@ -203,18 +270,18 @@ export struct RecipeDetailPage {
       Text('详情加载失败')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#3A2417');
+        .fontColor(UiTokens.textPrimary);
 
       Text(this.errorMessage)
         .fontSize(13)
-        .fontColor('#7B6555')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20)
         .textAlign(TextAlign.Center);
 
       if (this.traceId.length > 0) {
         Text(`traceId: ${this.traceId}`)
           .fontSize(11)
-          .fontColor('#9C8472')
+          .fontColor(UiTokens.textTertiary)
           .textAlign(TextAlign.Center);
       }
 
@@ -222,8 +289,8 @@ export struct RecipeDetailPage {
         .height(44)
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#2F2118')
-        .backgroundColor('#E7CDA7')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.accentWarm)
         .borderRadius(16)
         .padding({ left: 18, right: 18 })
         .onClick(() => {
@@ -232,10 +299,10 @@ export struct RecipeDetailPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 22, bottom: 22 })
-    .backgroundColor('#FFFBF5')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#F0DEC5' })
-    .shadow({ radius: 18, color: '#A27A3A12', offsetX: 0, offsetY: 10 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
   }
 
   @Builder
@@ -245,11 +312,11 @@ export struct RecipeDetailPage {
         Text(this.isMinimalView ? '极简视图已开启' : '一键切换极简视图')
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#2A1C14');
+          .fontColor(UiTokens.textPrimary);
 
         Text(this.isMinimalView ? '当前只保留材料和步骤，适合边看边做。' : '隐藏风味解读和附加信息，马上进入调制模式。')
           .fontSize(12)
-          .fontColor('#7D6A5A')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(18);
       }
       .layoutWeight(1)
@@ -259,8 +326,8 @@ export struct RecipeDetailPage {
         .height(38)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.isMinimalView ? '#2E2118' : '#FFF9EF')
-        .backgroundColor(this.isMinimalView ? '#F4E4CF' : '#1F1712')
+        .fontColor(this.isMinimalView ? UiTokens.textPrimary : UiTokens.textInverse)
+        .backgroundColor(this.isMinimalView ? UiTokens.accentWarmSoft : UiTokens.brandStrong)
         .borderRadius(16)
         .padding({ left: 14, right: 14 })
         .onClick(() => {
@@ -269,10 +336,10 @@ export struct RecipeDetailPage {
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 16, bottom: 16 })
-    .backgroundColor('#FFFBF5')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#F0DEC5' })
-    .shadow({ radius: 18, color: '#A27A3A12', offsetX: 0, offsetY: 10 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
   }
 
   @Builder
@@ -281,12 +348,12 @@ export struct RecipeDetailPage {
       Text(this.recipe.name)
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#201812');
+        .fontColor(UiTokens.textPrimary);
 
       if (this.recipe.englishName.length > 0) {
         Text(this.recipe.englishName)
           .fontSize(13)
-          .fontColor('#8D7258')
+          .fontColor(UiTokens.textSecondary)
           .letterSpacing(0.6);
       }
 
@@ -294,25 +361,25 @@ export struct RecipeDetailPage {
         if (this.recipe.difficulty.length > 0) {
           Text(this.recipe.difficulty)
             .fontSize(11)
-            .fontColor('#3A2B1E')
+            .fontColor(UiTokens.textPrimary)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-            .backgroundColor('#F4E4CF')
+            .backgroundColor(UiTokens.accentWarmSoft)
             .borderRadius(14);
         }
 
         if (this.recipe.abv.length > 0) {
           Text(this.recipe.abv)
             .fontSize(11)
-            .fontColor('#3A2B1E')
+            .fontColor(UiTokens.textPrimary)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-            .backgroundColor('#F7EFE2')
+            .backgroundColor(UiTokens.surfaceWarmAlt)
             .borderRadius(14);
         }
       }
 
       Text('准备好材料后，直接按顺序完成即可。')
         .fontSize(13)
-        .fontColor('#6E5D4E')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20);
 
 
@@ -320,9 +387,9 @@ export struct RecipeDetailPage {
     .width('100%')
     .alignItems(HorizontalAlign.Start)
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#FFF8F0')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(28)
-    .border({ width: 1, color: '#F0DEC5' });
+    .border({ width: 1, color: UiTokens.borderWarm });
   }
 
   @Builder
@@ -332,11 +399,11 @@ export struct RecipeDetailPage {
         Text(title)
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#201812');
+          .fontColor(UiTokens.textPrimary);
 
         Text(detail)
           .fontSize(12)
-          .fontColor('#857464');
+          .fontColor(UiTokens.textSecondary);
       }
       .alignItems(HorizontalAlign.Start);
 
@@ -352,19 +419,19 @@ export struct RecipeDetailPage {
         .width(28)
         .fontSize(12)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#3A281C')
+        .fontColor(UiTokens.textPrimary)
         .textAlign(TextAlign.Center);
 
       Column({ space: 4 }) {
         Text(name)
           .fontSize(15)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#201812');
+          .fontColor(UiTokens.textPrimary);
 
         if (note.length > 0) {
           Text(note)
             .fontSize(12)
-            .fontColor('#75675C')
+            .fontColor(UiTokens.textSecondary)
             .lineHeight(18);
         }
       }
@@ -375,17 +442,17 @@ export struct RecipeDetailPage {
         Text(amount)
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#3C2B1D')
+          .fontColor(UiTokens.textPrimary)
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#FFF0DB')
+          .backgroundColor(UiTokens.accentWarmSoft)
           .borderRadius(12);
       }
     }
     .width('100%')
     .padding({ left: 14, right: 14, top: 14, bottom: 14 })
-    .backgroundColor(index % 2 === 0 ? '#FFFBF5' : '#FFF7EE')
+    .backgroundColor(index % 2 === 0 ? UiTokens.surfaceWarm : UiTokens.surfaceWarmAlt)
     .borderRadius(20)
-    .border({ width: 1, color: '#F0DEC5' });
+    .border({ width: 1, color: UiTokens.borderWarm });
   }
 
   @Builder
@@ -396,20 +463,20 @@ export struct RecipeDetailPage {
         .height(34)
         .fontSize(13)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#FFF8EF')
+        .fontColor(UiTokens.textInverse)
         .textAlign(TextAlign.Center)
-        .backgroundColor('#201712')
+        .backgroundColor(UiTokens.brandStrong)
         .borderRadius(17);
 
       Column({ space: 6 }) {
         Text(title.length > 0 ? title : `步骤 ${index + 1}`)
           .fontSize(15)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#201812');
+          .fontColor(UiTokens.textPrimary);
 
         Text(detail)
           .fontSize(13)
-          .fontColor('#6F6258')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(20);
       }
       .layoutWeight(1)
@@ -418,9 +485,9 @@ export struct RecipeDetailPage {
     .width('100%')
     .alignItems(VerticalAlign.Top)
     .padding({ left: 14, right: 14, top: 14, bottom: 14 })
-    .backgroundColor('#FFFBF5')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(20)
-    .border({ width: 1, color: '#F0DEC5' });
+    .border({ width: 1, color: UiTokens.borderWarm });
   }
 
   @Builder
@@ -435,11 +502,11 @@ export struct RecipeDetailPage {
           Text('当前没有可展示的材料信息。')
             .width('100%')
             .fontSize(13)
-            .fontColor('#7F6D5D')
+            .fontColor(UiTokens.textSecondary)
             .padding({ left: 16, right: 16, top: 14, bottom: 14 })
-            .backgroundColor('#FFFBF5')
+            .backgroundColor(UiTokens.surfaceWarm)
             .borderRadius(18)
-            .border({ width: 1, color: '#F0DEC5' });
+            .border({ width: 1, color: UiTokens.borderWarm });
         } else {
           Column({ space: 10 }) {
             ForEach(this.recipe.ingredients, (item: RecipeIngredient, index: number) => {
@@ -458,11 +525,11 @@ export struct RecipeDetailPage {
           Text('当前没有可展示的步骤信息。')
             .width('100%')
             .fontSize(13)
-            .fontColor('#7F6D5D')
+            .fontColor(UiTokens.textSecondary)
             .padding({ left: 16, right: 16, top: 14, bottom: 14 })
-            .backgroundColor('#FFFBF5')
+            .backgroundColor(UiTokens.surfaceWarm)
             .borderRadius(18)
-            .border({ width: 1, color: '#F0DEC5' });
+            .border({ width: 1, color: UiTokens.borderWarm });
         } else {
           Column({ space: 10 }) {
             ForEach(this.recipe.steps, (item: RecipeStep, index: number) => {
@@ -494,12 +561,12 @@ export struct RecipeDetailPage {
             Text(this.recipe.name)
               .fontSize(22)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#FFF8EE')
+              .fontColor(UiTokens.textInverse)
               .maxLines(2);
 
             Text('高清预览，轻触空白处即可关闭')
               .fontSize(12)
-              .fontColor('#D7C6B4');
+              .fontColor(UiTokens.accentWarmSoft);
           }
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start);
@@ -508,8 +575,8 @@ export struct RecipeDetailPage {
             .height(38)
             .fontSize(13)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#201712')
-            .backgroundColor('#F1D6B2')
+            .fontColor(UiTokens.textPrimary)
+            .backgroundColor(UiTokens.accentWarmSoft)
             .borderRadius(16)
             .padding({ left: 14, right: 14 })
             .onClick(() => {
@@ -532,18 +599,18 @@ export struct RecipeDetailPage {
             if (this.recipe.category.length > 0) {
               Text(this.recipe.category)
                 .fontSize(11)
-                .fontColor('#FFF5E8')
+                .fontColor(UiTokens.textInverse)
                 .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-                .backgroundColor('#2A221D')
+                .backgroundColor(UiTokens.brandStrong)
                 .borderRadius(14);
             }
 
             if (this.recipe.englishName.length > 0) {
               Text(this.recipe.englishName)
                 .fontSize(11)
-                .fontColor('#E5D5C5')
+                .fontColor(UiTokens.accentWarmSoft)
                 .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-                .backgroundColor('#201A16')
+                .backgroundColor(UiTokens.brandHover)
                 .borderRadius(14);
             }
           }
@@ -566,14 +633,14 @@ export struct RecipeDetailPage {
         .linearGradient({
           direction: GradientDirection.Top,
           repeating: false,
-          colors: [['#F5EFE7', 0.0], ['#F7F4EE', 0.42], ['#F3EFE8', 1.0]]
+          colors: [[UiTokens.pageGradientStart, 0.0], [UiTokens.pageGradientMiddle, 0.42], [UiTokens.pageGradientEnd, 1.0]]
         })
 
       Column()
         .width(220)
         .height(220)
         .borderRadius(110)
-        .backgroundColor('#F0DDC0')
+        .backgroundColor(UiTokens.accentWarmSoft)
         .opacity(0.42)
         .position({ x: -70, y: 140 });
 
@@ -581,7 +648,7 @@ export struct RecipeDetailPage {
         .width(240)
         .height(240)
         .borderRadius(120)
-        .backgroundColor('#D9EAF0')
+        .backgroundColor(UiTokens.pageAccentBlue)
         .opacity(0.4)
         .position({ x: 210, y: 540 });
 
@@ -589,11 +656,12 @@ export struct RecipeDetailPage {
         Column({ space: 18 }) {
           RecipeDetailHeader({
             isBookmarked: this.isCurrentRecipeBookmarked(),
+            isBookmarkBusy: this.isBookmarkBusy,
             onBack: () => {
               router.back();
             },
             onToggleBookmark: () => {
-              this.toggleBookmark();
+              void this.toggleBookmark();
             },
             onShowMockHint: () => {
               this.showMockDataHint();

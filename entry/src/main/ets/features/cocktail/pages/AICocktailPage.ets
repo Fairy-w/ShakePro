@@ -1,15 +1,16 @@
-import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
+import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
+import { UiTokens } from '../../../common/constants/UiTokens';
 import { sessionStore } from '../../../common/storage/SessionStore';
-import { AiGenerateRecipeResponse } from '../../ai/model/AiGenerateRecipeResponse';
 import { AICocktailSessionSnapshot, aiCocktailSessionStore, ChatMessage } from '../../ai/viewmodel/AICocktailSessionStore';
-import { FavoriteAiCocktailMutationResponse, FavoriteAiCocktailStatusResponse } from '../../favorite/model/FavoriteAiCocktailModels';
+import { AiGenerateRecipeResponse } from '../../ai/model/AiGenerateRecipeResponse';
 import { buildAiCocktailRecipeKey } from '../../favorite/model/FavoriteAiCocktailKeyUtil';
+import { FavoriteAiCocktailMutationResponse, FavoriteAiCocktailStatusResponse } from '../../favorite/model/FavoriteAiCocktailModels';
 import { favoriteRepository } from '../../favorite/repository/FavoriteRepository';
 import { AICocktailHeroSection } from '../components/AICocktailHeroSection';
-import { AICocktailResultsSection } from '../components/AICocktailResultsSection';
 import { AICocktailRefineSheet } from '../components/AICocktailRefineSheet';
+import { AICocktailResultsSection } from '../components/AICocktailResultsSection';
 
 @Entry({ routeName: 'AICocktailPage' })
 @Component
@@ -257,6 +258,7 @@ export struct AICocktailPage {
     this.favoritedRecipeKeys = nextFavoritedRecipeKeys;
     this.favoriteIdsByRecipeKey = nextFavoriteIdsByRecipeKey;
   }
+
   private addFavoriteState(recipeKey: string, favoriteId?: number): void {
     if (this.favoritedRecipeKeys.indexOf(recipeKey) === -1) {
       const newArray: string[] = [];
@@ -356,30 +358,30 @@ export struct AICocktailPage {
   private buildTopBar() {
     Row() {
       Column({ space: 4 }) {
-        Text('SHAKEPRO')
+        Text('AI COCKTAIL')
           .fontSize(11)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#A58C66')
+          .fontColor(UiTokens.aiPrimary)
           .letterSpacing(1.8);
 
-        Text(this.shouldShowResultLayout() ? '为你定制的鸡尾酒' : '今晚想喝点什么？')
+        Text(this.shouldShowResultLayout() ? '为你定制的鸡尾酒' : '描述你现在想喝的口味')
           .fontSize(24)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#F7F0E4');
+          .fontColor(UiTokens.textPrimary);
       }
       .alignItems(HorizontalAlign.Start);
 
       Blank();
 
-      Button(this.getCurrentRecipes().length > 0 ? '换个口味再来一轮' : '生成结果后可继续调整')
+      Button(this.getCurrentRecipes().length > 0 ? '再调整一轮' : '生成结果后可继续调整')
         .height(40)
         .enabled(this.getCurrentRecipes().length > 0 && !this.isLoading)
         .fontSize(12)
         .fontWeight(FontWeight.Medium)
-        .fontColor((this.getCurrentRecipes().length > 0 && !this.isLoading) ? '#F3E6D2' : '#7F786E')
-        .backgroundColor((this.getCurrentRecipes().length > 0 && !this.isLoading) ? '#161917' : '#121412')
+        .fontColor((this.getCurrentRecipes().length > 0 && !this.isLoading) ? UiTokens.textAccent : UiTokens.textTertiary)
+        .backgroundColor(UiTokens.surfacePrimary)
         .borderRadius(16)
-        .border({ width: 1, color: (this.getCurrentRecipes().length > 0 && !this.isLoading) ? '#2A2E2A' : '#222622' })
+        .border({ width: 1, color: UiTokens.borderPrimary })
         .padding({ left: 14, right: 14 })
         .onClick(() => {
           this.isShowRefineSheet = true;
@@ -390,12 +392,49 @@ export struct AICocktailPage {
   }
 
   @Builder
+  private buildResultActionBar() {
+    if (!(this.getCurrentRecipes().length === 0 && this.errorMessage.length === 0 && !this.isLoading)) {
+      Column({ space: 10 }) {
+        Button(this.favoriteBusyKey.length > 0 ? '处理中...' : '收藏当前配方')
+          .width('100%')
+          .height(46)
+          .enabled(this.getCurrentRecipes().length > 0 && this.favoriteBusyKey.length === 0)
+          .fontSize(14)
+          .fontWeight(FontWeight.Medium)
+          .fontColor(UiTokens.textPrimary)
+          .backgroundColor(UiTokens.accentWarmSoft)
+          .borderRadius(16)
+          .border({ width: 1, color: UiTokens.borderWarm })
+          .onClick(() => {
+            const recipe: AiGenerateRecipeResponse | undefined = this.getCurrentRecipes()[0];
+            if (recipe) {
+              void this.handleToggleFavorite(recipe);
+            }
+          });
+
+        Blank()
+          .height(24);
+      }
+      .width('100%');
+    }
+  }
+
+  @Builder
   private buildInitialLayout() {
-    Column() {
+    Column({ space: 16 }) {
+      Column({ space: 10 }) {
+        Text('输入一句偏好，AI 会先给你几种可执行方案，再继续结合材料站和酒谱库细化。')
+          .fontSize(13)
+          .fontColor(UiTokens.textSecondary)
+          .lineHeight(20)
+          .textAlign(TextAlign.Center);
+      }
+      .width('100%');
+
       Blank();
 
       AICocktailHeroSection({
-        title: '描述你现在想喝的口味',
+        title: '今晚想喝点什么？',
         description: '写下口味、场景或心情即可。',
         inputText: this.inputText,
         isLoading: this.isLoading,
@@ -420,7 +459,7 @@ export struct AICocktailPage {
 
   @Builder
   private buildResultLayout() {
-    Column() {
+    Column({ space: 14 }) {
       AICocktailResultsSection({
         prompt: this.getLatestUserPrompt(),
         isLoading: this.isLoading,
@@ -432,7 +471,10 @@ export struct AICocktailPage {
         onToggleFavorite: (recipe: AiGenerateRecipeResponse) => {
           void this.handleToggleFavorite(recipe);
         }
-      });
+      })
+        .layoutWeight(1);
+
+      this.buildResultActionBar();
     }
     .width('100%')
     .layoutWeight(1);
@@ -470,13 +512,13 @@ export struct AICocktailPage {
       Column()
         .width('100%')
         .height('100%')
-        .backgroundColor('#00000066');
+        .backgroundColor(UiTokens.overlayMask);
 
       Column({ space: 16 }) {
         Text('先告诉我你想喝什么吧')
           .fontSize(18)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#F7F0E4')
+          .fontColor(UiTokens.textPrimary)
           .textAlign(TextAlign.Center);
 
         Button('OK')
@@ -484,8 +526,8 @@ export struct AICocktailPage {
           .height(48)
           .fontSize(15)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#241A10')
-          .backgroundColor('#D4B181')
+          .fontColor(UiTokens.textInverse)
+          .backgroundColor(UiTokens.aiPrimary)
           .borderRadius(16)
           .onClick(() => {
             this.isShowEmptyPromptOverlay = false;
@@ -496,9 +538,9 @@ export struct AICocktailPage {
       .width('78%')
       .constraintSize({ maxWidth: 420 })
       .padding({ left: 20, right: 20, top: 24, bottom: 24 })
-      .backgroundColor('#111412')
+      .backgroundColor(UiTokens.surfacePrimary)
       .borderRadius(24)
-      .border({ width: 1, color: '#2A2F2A' });
+      .border({ width: 1, color: UiTokens.borderPrimary });
     }
     .width('100%')
     .height('100%');
@@ -512,12 +554,12 @@ export struct AICocktailPage {
         .linearGradient({
           direction: GradientDirection.Top,
           repeating: false,
-          colors: [['#181614', 0.0], ['#121211', 0.48], ['#0A0B0A', 1.0]]
+          colors: [[UiTokens.pageGradientStart, 0.0], [UiTokens.pageGradientMiddle, 0.5], [UiTokens.pageGradientEnd, 1.0]]
         });
 
-      this.buildFloatingAccent(260, 260, '#8C6A43', 0.16, -72, 58);
-      this.buildFloatingAccent(220, 220, '#5F705B', 0.12, 250, 420);
-      this.buildFloatingAccent(160, 160, '#B89A73', 0.08, 210, 96);
+      this.buildFloatingAccent(260, 260, UiTokens.pageAccentBlue, 0.24, -72, 58);
+      this.buildFloatingAccent(220, 220, UiTokens.pageAccentMint, 0.18, 250, 420);
+      this.buildFloatingAccent(160, 160, UiTokens.accentWarmSoft, 0.24, 210, 96);
 
       Column({ space: 18 }) {
         this.buildTopBar();
@@ -531,11 +573,7 @@ export struct AICocktailPage {
       .width('100%')
       .height('100%')
       .padding({ left: 18, right: 18, top: 20, bottom: 18 })
-      .backgroundColor('#0D0F0E')
-      // .borderRadius(32)
-      // .border({ width: 1, color: '#252925' })
-      // .shadow({ radius: 30, color: '#00000066', offsetX: 0, offsetY: 18 })
-      // .margin({ left: 14, right: 14, top: 20, bottom: 18 });
+      .backgroundColor(UiTokens.pageBackground);
 
       if (this.isShowRefineSheet) {
         this.buildRefineSheetOverlay();

@@ -1,3 +1,5 @@
+import { UiTokens } from '../../../common/constants/UiTokens';
+
 @Component
 export struct AICocktailRefineSheet {
   @Prop inputText: string = '';
@@ -15,16 +17,17 @@ export struct AICocktailRefineSheet {
         ForEach(this.promptSamples, (sample: string) => {
           Button(sample)
             .fontSize(12)
-            .fontColor('#E9D8BD')
-            .backgroundColor('#141715')
+            .fontColor(UiTokens.textAccent)
+            .backgroundColor(UiTokens.surfacePrimary)
             .borderRadius(16)
-            .border({ width: 1, color: '#2A2F2A' })
+            .border({ width: 1, color: UiTokens.borderPrimary })
             .padding({ left: 14, right: 14, top: 10, bottom: 10 })
             .onClick(() => {
               this.onSelectSample(sample);
             });
         }, (sample: string) => sample);
       }
+      .padding({ right: 16 });
     }
     .width('100%')
     .scrollable(ScrollDirection.Horizontal)
@@ -38,11 +41,11 @@ export struct AICocktailRefineSheet {
           Text('继续调整')
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#F7F0E4');
+            .fontColor(UiTokens.textPrimary);
 
           Text('补充一点新偏好，再看一轮。')
             .fontSize(12)
-            .fontColor('#A79984')
+            .fontColor(UiTokens.textSecondary)
             .lineHeight(18);
         }
         .alignItems(HorizontalAlign.Start);
@@ -52,10 +55,10 @@ export struct AICocktailRefineSheet {
         Button('先收起')
           .height(36)
           .fontSize(12)
-          .fontColor('#D9C8AD')
-          .backgroundColor('#151816')
+          .fontColor(UiTokens.textAccent)
+          .backgroundColor(UiTokens.surfacePrimary)
           .borderRadius(14)
-          .border({ width: 1, color: '#292D28' })
+          .border({ width: 1, color: UiTokens.borderPrimary })
           .padding({ left: 12, right: 12 })
           .onClick(() => {
             this.onClose();
@@ -68,12 +71,12 @@ export struct AICocktailRefineSheet {
         .width('100%')
         .height(56)
         .fontSize(14)
-        .fontColor('#F7EEE0')
-        .placeholderColor('#7F786F')
-        .backgroundColor('#161917')
+        .fontColor(UiTokens.textPrimary)
+        .placeholderColor(UiTokens.textTertiary)
+        .backgroundColor(UiTokens.surfacePrimary)
         .borderRadius(20)
         .padding({ left: 18, right: 18 })
-        .border({ width: 1, color: '#2D322D' })
+        .border({ width: 1, color: UiTokens.borderPrimary })
         .onChange((value: string) => {
           this.onInputChange(value);
         });
@@ -86,8 +89,8 @@ export struct AICocktailRefineSheet {
         .fontSize(15)
         .fontWeight(FontWeight.Bold)
         .enabled(!this.isLoading)
-        .fontColor('#241A10')
-        .backgroundColor('#D4B181')
+        .fontColor(UiTokens.textInverse)
+        .backgroundColor(UiTokens.aiPrimary)
         .borderRadius(18)
         .onClick(() => {
           this.onSubmit();
@@ -95,9 +98,9 @@ export struct AICocktailRefineSheet {
     }
     .width('100%')
     .padding({ left: 20, right: 20, top: 22, bottom: 28 })
-    .backgroundColor('#0F1210')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius({ topLeft: 28, topRight: 28, bottomLeft: 20, bottomRight: 20 })
-    .border({ width: 1, color: '#232823' })
-    .shadow({ radius: 24, color: '#00000055', offsetX: 0, offsetY: -8 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 24, color: UiTokens.shadowStrong, offsetX: 0, offsetY: -8 });
   }
 }

@@ -1,3 +1,4 @@
+import { UiTokens } from '../../../common/constants/UiTokens';
 import { AiGenerateRecipeResponse } from '../../ai/model/AiGenerateRecipeResponse';
 import { buildAiCocktailRecipeKey } from '../../favorite/model/FavoriteAiCocktailKeyUtil';
 
@@ -18,10 +19,10 @@ export struct AICocktailResultsSection {
   private buildPromptSummary() {
     Column({ space: 10 }) {
       Row() {
-        Text('你的偏好')
+        Text('当前需求')
           .fontSize(11)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#A58C66')
+          .fontColor(UiTokens.aiPrimary)
           .letterSpacing(1.6);
 
         Blank();
@@ -29,7 +30,7 @@ export struct AICocktailResultsSection {
         if (this.isLoading) {
           Text('正在生成')
             .fontSize(11)
-            .fontColor('#D5BC93');
+            .fontColor(UiTokens.textSecondary);
         }
       }
       .width('100%');
@@ -38,14 +39,14 @@ export struct AICocktailResultsSection {
         .width('100%')
         .fontSize(18)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#F5EDDF')
+        .fontColor(UiTokens.textPrimary)
         .lineHeight(28);
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#131614')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#2A2F2A' });
+    .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   @Builder
@@ -54,18 +55,18 @@ export struct AICocktailResultsSection {
       Text(this.recipes.length > 0 ? '推荐结果' : '酒单建议')
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#EFE6D7');
+        .fontColor(UiTokens.textPrimary);
 
       Blank();
 
       if (this.recipes.length > 0) {
         Text(`${this.recipes.length} 杯`)
           .fontSize(11)
-          .fontColor('#A9977E')
+          .fontColor(UiTokens.textSecondary)
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#151917')
+          .backgroundColor(UiTokens.surfaceSecondary)
           .borderRadius(12)
-          .border({ width: 1, color: '#2A302B' });
+          .border({ width: 1, color: UiTokens.borderPrimary });
       }
     }
     .width('100%');
@@ -114,11 +115,11 @@ export struct AICocktailResultsSection {
         LoadingProgress()
           .width(16)
           .height(16)
-          .color('#C6A16C');
+          .color(UiTokens.aiPrimary);
 
-        Text('正在为您调酒...')
+        Text('正在为你整理更适合的酒单...')
           .fontSize(13)
-          .fontColor('#5A4B3D')
+          .fontColor(UiTokens.textSecondary)
           .lineHeight(20);
       }
       .width('100%');
@@ -128,19 +129,19 @@ export struct AICocktailResultsSection {
           .width('62%')
           .height(30)
           .borderRadius(10)
-          .backgroundColor('#E7D7C1');
+          .backgroundColor(UiTokens.accentWarmSoft);
 
         Column()
           .width('100%')
           .height(14)
           .borderRadius(7)
-          .backgroundColor('#EDE1D1');
+          .backgroundColor(UiTokens.surfaceSecondary);
 
         Column()
           .width('84%')
           .height(14)
           .borderRadius(7)
-          .backgroundColor('#EDE1D1');
+          .backgroundColor(UiTokens.surfaceSecondary);
       }
       .width('100%')
       .alignItems(HorizontalAlign.Start);
@@ -150,13 +151,13 @@ export struct AICocktailResultsSection {
           .width(96)
           .height(30)
           .borderRadius(15)
-          .backgroundColor('#EAD9BE');
+          .backgroundColor(UiTokens.aiSoft);
 
         Column()
           .width(96)
           .height(30)
           .borderRadius(15)
-          .backgroundColor('#EAD9BE');
+          .backgroundColor(UiTokens.primarySoft);
       }
       .width('100%');
 
@@ -165,14 +166,15 @@ export struct AICocktailResultsSection {
           .width(96)
           .height(18)
           .borderRadius(9)
-          .backgroundColor('#E7D7C1');
+          .backgroundColor(UiTokens.accentWarmSoft);
 
         ForEach(this.loadingCardKeys, (_: string, lineIndex: number) => {
           Column()
             .width('100%')
             .height(lineIndex === 0 ? 44 : 52)
             .borderRadius(16)
-            .backgroundColor('#F8F1E7');
+            .backgroundColor(UiTokens.surfacePrimary)
+            .border({ width: 1, color: UiTokens.borderPrimary });
         }, (item: string) => `loading-step-${item}`);
       }
       .width('100%')
@@ -190,13 +192,13 @@ export struct AICocktailResultsSection {
         .width(6)
         .height(6)
         .borderRadius(3)
-        .backgroundColor('#A98758')
+        .backgroundColor(UiTokens.aiPrimary)
         .margin({ top: 7 });
 
       Text(material)
         .layoutWeight(1)
         .fontSize(13)
-        .fontColor('#40342B')
+        .fontColor(UiTokens.textPrimary)
         .lineHeight(20);
     }
     .width('100%')
@@ -210,25 +212,25 @@ export struct AICocktailResultsSection {
         Text(`${index + 1}`)
           .fontSize(12)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#4D3820');
+          .fontColor(UiTokens.textPrimary);
       }
       .width(28)
       .height(28)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#E2CFB1')
+      .backgroundColor(UiTokens.accentWarmSoft)
       .borderRadius(14);
 
       Text(step)
         .layoutWeight(1)
         .fontSize(13)
-        .fontColor('#40342B')
+        .fontColor(UiTokens.textPrimary)
         .lineHeight(20);
     }
     .width('100%')
     .padding({ left: 12, right: 12, top: 12, bottom: 12 })
-    .backgroundColor('#F8F1E7')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(16)
-    .border({ width: 1, color: '#E7D7C0' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .alignItems(VerticalAlign.Top);
   }
 
@@ -240,12 +242,12 @@ export struct AICocktailResultsSection {
           Text(recipe.name)
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#1E1A17')
+            .fontColor(UiTokens.textPrimary)
             .lineHeight(34);
 
           Text(recipe.description)
             .fontSize(13)
-            .fontColor('#5A4B3D')
+            .fontColor(UiTokens.textSecondary)
             .lineHeight(21);
         }
         .width('100%')
@@ -254,16 +256,16 @@ export struct AICocktailResultsSection {
         Row({ space: 8 }) {
           Text(`${recipe.materials.length} 种材料`)
             .fontSize(11)
-            .fontColor('#5F4C36')
+            .fontColor(UiTokens.textAccent)
             .padding({ left: 12, right: 12, top: 7, bottom: 7 })
-            .backgroundColor('#EAD9BE')
+            .backgroundColor(UiTokens.primarySoft)
             .borderRadius(14);
 
           Text(`${recipe.steps.length} 步完成`)
             .fontSize(11)
-            .fontColor('#5F4C36')
+            .fontColor(UiTokens.aiPrimary)
             .padding({ left: 12, right: 12, top: 7, bottom: 7 })
-            .backgroundColor('#EAD9BE')
+            .backgroundColor(UiTokens.aiSoft)
             .borderRadius(14);
         }
         .width('100%');
@@ -272,7 +274,7 @@ export struct AICocktailResultsSection {
           Text('你需要准备')
             .fontSize(12)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#7A5D3C')
+            .fontColor(UiTokens.textSecondary)
             .letterSpacing(1.2);
 
           Column({ space: 10 }) {
@@ -290,7 +292,7 @@ export struct AICocktailResultsSection {
           Text('怎么调')
             .fontSize(12)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#7A5D3C')
+            .fontColor(UiTokens.textSecondary)
             .letterSpacing(1.2);
 
           Column({ space: 10 }) {
@@ -360,7 +362,7 @@ export struct AICocktailResultsSection {
         )
           .fontSize(11)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#8B6840')
+          .fontColor(UiTokens.aiPrimary)
           .letterSpacing(1.6);
 
         Blank();
@@ -372,7 +374,7 @@ export struct AICocktailResultsSection {
             this.errorMessage.length > 0 ? '请稍后重试' : '可重新描述'
           )
             .fontSize(11)
-            .fontColor('#826B4C');
+            .fontColor(UiTokens.textSecondary);
 
           if (this.recipes.length > 0) {
             Button(this.favoriteBusy ? '处理中...' : (this.isActiveRecipeFavorited() ? '已收藏' : '收藏'))
@@ -380,12 +382,12 @@ export struct AICocktailResultsSection {
               .enabled(!this.favoriteBusy)
               .fontSize(12)
               .fontWeight(FontWeight.Medium)
-              .fontColor(this.isActiveRecipeFavorited() ? '#3D2B16' : '#684B2D')
-              .backgroundColor(this.isActiveRecipeFavorited() ? '#E7CDA7' : '#F7EDDE')
+              .fontColor(this.isActiveRecipeFavorited() ? UiTokens.textInverse : UiTokens.aiPrimary)
+              .backgroundColor(this.isActiveRecipeFavorited() ? UiTokens.aiPrimary : UiTokens.aiSoft)
               .borderRadius(15)
               .border({
                 width: 1,
-                color: this.isActiveRecipeFavorited() ? '#D6B485' : '#DDC4A4'
+                color: this.isActiveRecipeFavorited() ? UiTokens.aiPrimaryHover : UiTokens.borderPrimary
               })
               .padding({ left: 12, right: 12 })
               .onClick(() => {
@@ -399,21 +401,21 @@ export struct AICocktailResultsSection {
       Column()
         .width('100%')
         .height(1)
-        .backgroundColor('#DFCDB1');
+        .backgroundColor(UiTokens.borderWarm);
 
       Column() {
         if (this.isLoading) {
           this.buildLoadingBody();
         } else if (this.errorMessage.length > 0) {
-          this.buildMessageBody('这次没能顺利配出合适的酒单', this.errorMessage, '#6A2428', '#7E4C4F');
+          this.buildMessageBody('这次没能顺利配出合适的酒单', this.errorMessage, UiTokens.error, UiTokens.textSecondary);
         } else if (this.recipes.length > 0) {
           this.buildRecipeContentCarousel();
         } else {
           this.buildMessageBody(
             '还没找到特别合适的这一杯',
             '换一种说法通常会更准确，比如补充基酒、甜度、酒精感、是否想要气泡，或者告诉我你现在手边有什么材料。',
-            '#6D5232',
-            '#7B6A57'
+            UiTokens.textPrimary,
+            UiTokens.textSecondary
           );
         }
       }
@@ -421,12 +423,12 @@ export struct AICocktailResultsSection {
       .layoutWeight(1);
     }
     .width('100%')
-    .height(490)
+    .layoutWeight(1)
     .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-    .backgroundColor('#F2E5D3')
+    .backgroundColor(UiTokens.surfaceWarm)
     .borderRadius(24)
-    .border({ width: 1, color: '#D6BE9D' })
-    .shadow({ radius: 20, color: '#2A1C0C1A', offsetX: 0, offsetY: 12 });
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 20, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 12 });
   }
 
   build() {

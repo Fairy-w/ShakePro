@@ -1,9 +1,10 @@
 import { TabsConcaveCircle } from '../../../common/components/navigation/TabsConcaveCircle';
+import { UiTokens } from '../../../common/constants/UiTokens';
 import { TabMenusInterfaceIRequired } from '../../../common/types/TabMenusInterface';
-import { MainPage } from './HomePage';
-import { SlideToHideAndDisplaceComponent } from '../../../legacy/pages/SlideToHideAndDisplaceDemo';
-import { BartendingStationPage } from './BartendingStationPage';
+import { MyFavoritePage } from '../../favorite/pages/MyFavoritePage';
 import { RecipeLibraryPage } from '../../recipe/pages/RecipeLibraryPage';
+import { BartendingStationPage } from './BartendingStationPage';
+import { MainPage } from './HomePage';
 
 @Entry({ routeName: 'NavigationPage' })
 @Component
@@ -14,33 +15,33 @@ export struct NavigationPage {
       text: $r('app.string.custom_tab_home'),
       image: $r('app.media.tab_home'),
       selectImage: $r('app.media.tab_home'),
-      tabsFontColor: '#6D7F8B',
-      tabsSelectFontColor: '#18323F',
+      tabsFontColor: UiTokens.textSecondary,
+      tabsSelectFontColor: UiTokens.textPrimary,
       pagePath: 'features/home/pages/HomePage'
     },
     {
       text: $r('app.string.custom_tab_bar'),
-      image: $r('app.media.tab_community'),
-      selectImage: $r('app.media.tab_community'),
-      tabsFontColor: '#6D7F8B',
-      tabsSelectFontColor: '#18323F',
+      image: $r('app.media.img_1'),
+      selectImage: $r('app.media.img_1'),
+      tabsFontColor: UiTokens.textSecondary,
+      tabsSelectFontColor: UiTokens.textPrimary,
       pagePath: 'features/home/pages/BartendingStationPage'
     },
     {
       text: $r('app.string.custom_tab_news'),
-      image: $r('app.media.news'),
-      selectImage: $r('app.media.news'),
-      tabsFontColor: '#6D7F8B',
-      tabsSelectFontColor: '#18323F',
+      image: $r('app.media.img'),
+      selectImage: $r('app.media.img'),
+      tabsFontColor: UiTokens.textSecondary,
+      tabsSelectFontColor: UiTokens.textPrimary,
       pagePath: 'features/recipe/pages/RecipeLibraryPage'
     },
     {
       text: $r('app.string.custom_tab_mine'),
       image: $r('app.media.tab_user'),
       selectImage: $r('app.media.tab_user'),
-      tabsFontColor: '#6D7F8B',
-      tabsSelectFontColor: '#18323F',
-      pagePath: 'legacy/pages/SlideToHideAndDisplaceDemo'
+      tabsFontColor: UiTokens.textSecondary,
+      tabsSelectFontColor: UiTokens.textPrimary,
+      pagePath: 'features/favorite/pages/MyFavoritePage'
     }
   ];
 
@@ -57,7 +58,7 @@ export struct NavigationPage {
     } else if (this.currentIndex === 2) {
       RecipeLibraryPage();
     } else {
-      SlideToHideAndDisplaceComponent();
+      MyFavoritePage();
     }
   }
 
@@ -69,14 +70,14 @@ export struct NavigationPage {
         .linearGradient({
           direction: GradientDirection.Top,
           repeating: false,
-          colors: [['#F7FBFD', 0.0], ['#EEF5F8', 0.56], ['#E9F1F5', 1.0]]
+          colors: [[UiTokens.pageGradientStart, 0.0], [UiTokens.pageGradientMiddle, 0.56], [UiTokens.pageGradientEnd, 1.0]]
         });
 
       Column()
         .width(240)
         .height(240)
         .borderRadius(120)
-        .backgroundColor('#D8EEF4')
+        .backgroundColor(UiTokens.pageAccentBlue)
         .opacity(0.52)
         .position({ x: -70, y: -36 });
 
@@ -84,7 +85,7 @@ export struct NavigationPage {
         .width(220)
         .height(220)
         .borderRadius(110)
-        .backgroundColor('#DDF5F1')
+        .backgroundColor(UiTokens.pageAccentMint)
         .opacity(0.72)
         .position({ x: 250, y: 600 });
 
@@ -94,18 +95,18 @@ export struct NavigationPage {
         }
         .width('100%')
         .height('100%')
-        .borderRadius(28)
-        .backgroundColor('#F7FBFD')
+        .borderRadius(UiTokens.radiusXl)
+        .backgroundColor(UiTokens.pageGradientStart)
         .margin({ left: 12, right: 12, top: 12 });
 
         TabsConcaveCircle({
           tabsMenu: this.tabsMenu,
           selectIndex: this.currentIndex,
           renderContent: this.renderContent,
-          tabsBgColor: '#FFFFFF',
-          tabsSelectBgColor: '#DDF5F1',
-          tabsFontColor: '#6D7F8B',
-          tabsSelectFontColor: '#18323F',
+          tabsBgColor: UiTokens.surfacePrimary,
+          tabsSelectBgColor: UiTokens.aiSoft,
+          tabsFontColor: UiTokens.textSecondary,
+          tabsSelectFontColor: UiTokens.textPrimary,
           tabHeight: 82
         })
           .margin({ left: 16, right: 16, bottom: 18 });

@@ -1,20 +1,46 @@
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
+import { UiTokens } from '../../../common/constants/UiTokens';
 import {
-  MATERIAL_LIST_CATEGORIES,
-  MaterialListCategory,
-  MaterialRecord
-} from '../../station/model/BartendingStationMockData';
-import { getRecordedMaterials, setRecordedMaterialDrafts } from '../../station/model/MaterialStationStore';
+  MaterialImagePreviewOverlay,
+  MaterialPreviewTagStyle,
+  resolveMaterialPreviewImageUrl
+} from '../../../common/components/MaterialImagePreviewOverlay';
+import { MaterialRecord } from '../../station/model/BartendingStationMockData';
+import {
+  getRecordedMaterials,
+  removeRecordedMaterialById,
+  setRecordedMaterialDrafts
+} from '../../station/model/MaterialStationStore';
 import { stationMaterialRepository } from '../../station/repository/StationMaterialRepository';
 import { sessionStore } from '../../../common/storage/SessionStore';
 
+interface InventoryTab {
+  id: string;
+  title: string;
+}
+
+const INVENTORY_TABS: InventoryTab[] = [
+  { id: 'all', title: '全部' },
+  { id: 'base_liquor', title: '基底 / 酒类' },
+  { id: 'fruit_flavor', title: '水果 / 调味' },
+  { id: 'garnish_spice', title: '装饰 / 香料' }
+];
+
 @Component
 export struct BartendingStationPage {
-  @State private activeMaterialCategoryId: string = 'all';
+  @State private activeTabId: string = 'all';
+  @State private keyword: string = '';
+  @State private showSearchBar: boolean = false;
   @State private recordedMaterials: MaterialRecord[] = [];
   @State private loading: boolean = false;
+  @State private deleteBusy: boolean = false;
+  @State private showAddSheet: boolean = false;
+  @State private batchMode: boolean = false;
+  @State private pendingDeleteIds: string[] = [];
+  @State private materialPreviewVisible: boolean = false;
+  @State private previewTarget: MaterialRecord | undefined = undefined;
 
   aboutToAppear(): void {
     void this.refreshRecordedMaterials();
@@ -42,272 +68,405 @@ export struct BartendingStationPage {
     try {
       const drafts = await stationMaterialRepository.getUserMaterials();
       setRecordedMaterialDrafts(drafts);
+      this.recordedMaterials = getRecordedMaterials();
     } catch (error) {
       const errorObject = error as Record<string, Object>;
       const message = errorObject['message'];
       if (typeof message === 'string' && message.trim().length > 0) {
         promptAction.showToast({ message });
       }
+      this.recordedMaterials = getRecordedMaterials();
     } finally {
       this.loading = false;
     }
+  }
+
+  private normalizeKeyword(): string {
+    return this.keyword.trim().toLowerCase();
+  }
+
+  private belongsToTab(item: MaterialRecord, tabId: string): boolean {
+    if (tabId === 'all') {
+      return true;
+    }
+    if (tabId === 'base_liquor') {
+      return item.categoryId === 'spirit' || item.categoryId === 'liqueur';
+    }
+    if (tabId === 'fruit_flavor') {
+      return item.categoryId === 'fruit' || item.categoryId === 'mixer';
+    }
+    const hasGarnishTag = item.tags.some((tag: string): boolean => {
+      return tag.indexOf('装饰') !== -1 || tag.indexOf('香料') !== -1;
+    });
+    return item.categoryId === 'glassware' || hasGarnishTag;
+  }
+
+  private matchesKeyword(item: MaterialRecord): boolean {
+    const normalizedKeyword = this.normalizeKeyword();
+    if (normalizedKeyword.length === 0) {
+      return true;
+    }
+    const joinedTags = item.tags.join(',');
+    return item.name.toLowerCase().indexOf(normalizedKeyword) !== -1 ||
+      item.categoryName.toLowerCase().indexOf(normalizedKeyword) !== -1 ||
+      item.statusText.toLowerCase().indexOf(normalizedKeyword) !== -1 ||
+      joinedTags.toLowerCase().indexOf(normalizedKeyword) !== -1;
+  }
+
+  private getDisplayedMaterials(): MaterialRecord[] {
+    return this.recordedMaterials.filter((item: MaterialRecord): boolean => {
+      return this.belongsToTab(item, this.activeTabId) && this.matchesKeyword(item);
+    });
+  }
+
+  private resolveErrorMessage(error: Object, fallbackMessage: string): string {
+    const errorObject = error as Record<string, Object>;
+    const message = errorObject['message'];
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+    return fallbackMessage;
+  }
+
+  private resolveAddDateText(addedAt?: string): string {
+    if (typeof addedAt !== 'string' || addedAt.trim().length === 0) {
+      return '添加日期待同步';
+    }
+    const parsedDate = new Date(addedAt);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '添加于 ' + addedAt.substring(0, Math.min(10, addedAt.length));
+    }
+    const year = parsedDate.getFullYear().toString();
+    const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = parsedDate.getDate().toString().padStart(2, '0');
+    return '添加于 ' + year + '-' + month + '-' + day;
+  }
+
+  private resolveMaterialCardImageUrl(item: MaterialRecord): string {
+    if (typeof item.imageUrlCard === 'string' && item.imageUrlCard.trim().length > 0) {
+      return item.imageUrlCard;
+    }
+    if (typeof item.imageUrlThumb === 'string' && item.imageUrlThumb.trim().length > 0) {
+      return item.imageUrlThumb;
+    }
+    if (typeof item.imageUrl === 'string' && item.imageUrl.trim().length > 0) {
+      return item.imageUrl;
+    }
+    if (typeof item.imageUrlDetail === 'string' && item.imageUrlDetail.trim().length > 0) {
+      return item.imageUrlDetail;
+    }
+    return '';
+  }
+
+  @Builder
+  private buildMaterialImage(item: MaterialRecord) {
+    if (this.resolveMaterialCardImageUrl(item).length > 0) {
+      Image(this.resolveMaterialCardImageUrl(item))
+        .width('100%')
+        .height(98)
+        .objectFit(ImageFit.Cover)
+        .borderRadius(14);
+    } else {
+      Column()
+        .width('100%')
+        .height(98)
+        .backgroundColor(UiTokens.surfaceSecondary)
+        .borderRadius(14);
+    }
+  }
+
+  private openMaterialPreview(item: MaterialRecord): void {
+    this.previewTarget = item;
+    this.materialPreviewVisible = true;
+  }
+
+  private closeMaterialPreview(): void {
+    this.materialPreviewVisible = false;
+    this.previewTarget = undefined;
+  }
+
+  private getPreviewTitle(): string {
+    return this.previewTarget ? this.previewTarget.name : '';
+  }
+
+  private getPreviewImageUrl(): string {
+    if (!this.previewTarget) {
+      return '';
+    }
+    return resolveMaterialPreviewImageUrl(this.previewTarget);
+  }
+
+  private getPreviewPrimaryTag(): MaterialPreviewTagStyle {
+    if (!this.previewTarget) {
+      return {
+        label: '',
+        textColor: UiTokens.textAccent,
+        backgroundColor: UiTokens.primarySoft
+      };
+    }
+    return {
+      label: this.previewTarget.categoryName,
+      textColor: this.previewTarget.accentColor,
+      backgroundColor: this.previewTarget.softColor
+    };
+  }
+
+  private getPreviewSecondaryTag(): MaterialPreviewTagStyle {
+    if (!this.previewTarget) {
+      return {
+        label: '',
+        textColor: UiTokens.success,
+        backgroundColor: UiTokens.successSoft
+      };
+    }
+    const hasItem = this.previewTarget.statusText === '我有';
+    return {
+      label: this.previewTarget.statusText,
+      textColor: hasItem ? UiTokens.success : UiTokens.warning,
+      backgroundColor: hasItem ? UiTokens.successSoft : UiTokens.warningSoft
+    };
+  }
+
+  private toggleBatchMode(): void {
+    this.batchMode = !this.batchMode;
+    if (!this.batchMode) {
+      this.pendingDeleteIds = [];
+    }
+  }
+
+  private togglePendingDelete(materialId: string): void {
+    if (!this.batchMode) {
+      this.batchMode = true;
+    }
+    if (this.pendingDeleteIds.indexOf(materialId) !== -1) {
+      this.pendingDeleteIds = this.pendingDeleteIds.filter((itemId: string): boolean => itemId !== materialId);
+      return;
+    }
+    this.pendingDeleteIds = this.pendingDeleteIds.concat([materialId]);
+  }
+
+  private async removeMaterial(item: MaterialRecord): Promise<void> {
+    if (this.deleteBusy) {
+      return;
+    }
+
+    const barcode = typeof item.barcode === 'string' ? item.barcode.trim() : '';
+    if (barcode.length === 0) {
+      promptAction.showToast({ message: '该材料还未同步到可移出状态，请稍后重试' });
+      return;
+    }
+
+    this.deleteBusy = true;
+    try {
+      await stationMaterialRepository.deleteUserMaterial(barcode);
+      removeRecordedMaterialById(item.id);
+      this.recordedMaterials = getRecordedMaterials();
+      this.pendingDeleteIds = this.pendingDeleteIds.filter((materialId: string): boolean => materialId !== item.id);
+      promptAction.showToast({ message: item.name + ' 已移出材料库' });
+    } catch (error) {
+      promptAction.showToast({ message: this.resolveErrorMessage(error as Object, '移出材料失败，请稍后再试') });
+    } finally {
+      this.deleteBusy = false;
+    }
+  }
+
+  private async removeSelectedMaterials(): Promise<void> {
+    if (this.deleteBusy || this.pendingDeleteIds.length === 0) {
+      return;
+    }
+
+    this.deleteBusy = true;
+    let removedCount = 0;
+    let skippedCount = 0;
+
+    for (let index = 0; index < this.pendingDeleteIds.length; index += 1) {
+      const materialId = this.pendingDeleteIds[index];
+      const targetMaterial = this.recordedMaterials.find((item: MaterialRecord): boolean => item.id === materialId);
+      if (!targetMaterial) {
+        continue;
+      }
+      const barcode = typeof targetMaterial.barcode === 'string' ? targetMaterial.barcode.trim() : '';
+      if (barcode.length === 0) {
+        skippedCount += 1;
+        continue;
+      }
+      try {
+        await stationMaterialRepository.deleteUserMaterial(barcode);
+        removeRecordedMaterialById(targetMaterial.id);
+        removedCount += 1;
+      } catch (error) {
+      }
+    }
+
     this.recordedMaterials = getRecordedMaterials();
+    this.pendingDeleteIds = [];
+    this.batchMode = false;
+    this.deleteBusy = false;
+
+    if (removedCount > 0) {
+      promptAction.showToast({
+        message: skippedCount > 0
+          ? '已移出 ' + removedCount.toString() + ' 项，另有 ' + skippedCount.toString() + ' 项暂不可删除'
+          : '已移出 ' + removedCount.toString() + ' 项材料'
+      });
+      return;
+    }
+
+    promptAction.showToast({ message: '当前选择的材料暂不可删除' });
   }
 
   @Builder
   private buildHeader() {
-    Column({ space: 10 }) {
-      Row({ space: 8 }) {
-        Text('ShakePro Station')
-          .fontSize(12)
-          .fontWeight(FontWeight.Medium)
-          .fontColor('#5D7B8C')
-          .letterSpacing(1.1);
-
-        Text('库存管理')
-          .fontSize(11)
-          .fontColor('#245C82')
-          .padding({ left: 10, right: 10, top: 5, bottom: 5 })
-          .backgroundColor('#E8F5FB')
-          .borderRadius(14);
-      }
-
-      Text('我的材料台')
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#16303E');
-
-      Text('专注查看、筛选和更新库存，录入入口缩成一排工具操作。')
-        .fontSize(13)
-        .fontColor('#6E818D')
-        .lineHeight(20);
-    }
-    .width('100%')
-    .alignItems(HorizontalAlign.Start);
-  }
-
-  @Builder
-  private buildOverviewMetric(value: string, label: string, accentColor: string, softColor: string) {
-    Column({ space: 6 }) {
-      Text(value)
-        .fontSize(24)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#173240');
-
-      Text(label)
-        .fontSize(12)
-        .fontColor('#6E818D');
-
-      Row()
-        .width(28)
-        .height(4)
-        .borderRadius(2)
-        .backgroundColor(accentColor)
-        .opacity(0.75);
-    }
-    .layoutWeight(1)
-    .padding(14)
-    .backgroundColor(softColor)
-    .borderRadius(18)
-    .alignItems(HorizontalAlign.Start);
-  }
-
-  @Builder
-  private buildOverviewCard() {
-    Column({ space: 14 }) {
+    Column({ space: 12 }) {
       Row() {
         Column({ space: 4 }) {
-          Text('库存概况')
-            .fontSize(18)
+          Text('我的材料库（' + this.recordedMaterials.length.toString() + '）')
+            .fontSize(28)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
+            .fontColor(UiTokens.textPrimary);
 
-          Text('先看状态，再决定是补录还是调整现有材料。')
+          Text('支持扫码录入、手动挑选和批量移出，调酒台状态一眼可查。')
             .fontSize(12)
-            .fontColor('#72838F')
+            .fontColor(UiTokens.textSecondary)
             .lineHeight(18);
         }
+        .layoutWeight(1)
         .alignItems(HorizontalAlign.Start);
+
+        Row({ space: 8 }) {
+          Text('⌕')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary);
+        }
+        .width(42)
+        .height(42)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor(UiTokens.surfacePrimary)
+        .borderRadius(16)
+        .border({ width: 1, color: UiTokens.borderPrimary })
+        .onClick(() => {
+          this.showSearchBar = !this.showSearchBar;
+          if (!this.showSearchBar) {
+            this.keyword = '';
+          }
+        });
+      }
+      .width('100%');
+
+      if (this.showSearchBar) {
+        Row({ space: 10 }) {
+          Text('查')
+            .fontSize(14)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textAccent);
+
+          TextInput({ placeholder: '搜索已录入材料', text: this.keyword })
+            .layoutWeight(1)
+            .height(44)
+            .backgroundColor(Color.Transparent)
+            .fontSize(14)
+            .placeholderColor(UiTokens.textTertiary)
+            .onChange((value: string) => {
+              this.keyword = value;
+            });
+
+          if (this.keyword.length > 0) {
+            Button('清空', { type: ButtonType.Capsule })
+              .height(34)
+              .fontSize(11)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(UiTokens.textSecondary)
+              .backgroundColor(UiTokens.pageGradientMiddle)
+              .onClick(() => {
+                this.keyword = '';
+              });
+          }
+        }
+        .width('100%')
+        .height(52)
+        .padding({ left: 16, right: 12 })
+        .backgroundColor(UiTokens.surfacePrimary)
+        .borderRadius(18)
+        .border({ width: 1, color: UiTokens.borderPrimary });
+      }
+
+      Row() {
+        Button(this.batchMode ? '完成管理' : '批量管理', { type: ButtonType.Capsule })
+          .height(34)
+          .fontSize(12)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.batchMode ? UiTokens.textPrimary : UiTokens.primary)
+          .backgroundColor(this.batchMode ? UiTokens.pageAccentMint : UiTokens.primarySoft)
+          .onClick(() => {
+            this.toggleBatchMode();
+          });
 
         Blank();
 
-        Text(this.recordedMaterials.length.toString() + ' 项')
-          .fontSize(12)
-          .fontColor('#72838F');
-      }
-      .width('100%')
-      .alignItems(VerticalAlign.Top);
-
-      Row({ space: 10 }) {
-        this.buildOverviewMetric(
-          this.recordedMaterials.length.toString(),
-          '已收录材料',
-          '#1B596E',
-          '#DDF5F1'
-        );
-        this.buildOverviewMetric(
-          this.getPendingCompletionCount().toString(),
-          '待补全',
-          '#A66A1C',
-          '#F8E9CF'
-        );
-        this.buildOverviewMetric(
-          this.getReadyCount().toString(),
-          '可直接使用',
-          '#245C82',
-          '#E8F5FB'
-        );
-      }
-      .width('100%');
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor('#FFFFFF')
-    .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
-  }
-
-  @Builder
-  private buildCompactAction(title: string, detail: string, accentColor: string, softColor: string, route: string) {
-    Row({ space: 10 }) {
-      Row() {
-        Text(title.substring(0, 1))
-          .fontSize(16)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(accentColor);
-      }
-      .width(40)
-      .height(40)
-      .justifyContent(FlexAlign.Center)
-      .backgroundColor(softColor)
-      .borderRadius(14);
-
-      Column({ space: 4 }) {
-        Text(title)
-          .fontSize(15)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#173240');
-
-        Text(detail)
-          .fontSize(11)
-          .fontColor('#72838F')
-          .maxLines(2);
-      }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start);
-    }
-    .layoutWeight(1)
-    .padding(14)
-    .backgroundColor('#FFFFFF')
-    .borderRadius(20)
-    .border({ width: 1, color: '#D7E6ED' })
-    .onClick(() => {
-      router.pushUrl({ url: route }, 3000);
-    });
-  }
-
-  @Builder
-  private buildQuickActions() {
-    Column({ space: 12 }) {
-      Row({ space: 10 }) {
-        this.buildCompactAction(
-          '扫码录入',
-          '适合酒瓶包装材料',
-          '#1B596E',
-          '#DDF5F1',
-          'features/station/pages/MaterialScannerPage'
-        );
-        this.buildCompactAction(
-          '手动添加',
-          '适合水果和杯具',
-          '#245C82',
-          '#E8F5FB',
-          'features/station/pages/MaterialLibraryPage'
-        );
-      }
-      .width('100%');
-
-      Row({ space: 10 }) {
-        Text('需要灵感时再去生成配方，不打断库存管理主流程。')
-          .layoutWeight(1)
-          .fontSize(12)
-          .fontColor('#72838F')
-          .lineHeight(18);
-
-        Button('去配方', { type: ButtonType.Capsule })
-          .height(38)
+        Button('刷新', { type: ButtonType.Capsule })
+          .height(34)
           .fontSize(12)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#1B596E')
-          .backgroundColor('#DDF5F1')
+          .fontColor(UiTokens.primary)
+          .backgroundColor(UiTokens.primarySoft)
+          .enabled(!this.loading)
           .onClick(() => {
-            router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' }, 3000);
+            void this.refreshRecordedMaterials();
           });
       }
-      .width('100%')
-      .padding(14)
-      .backgroundColor('#FFFFFF')
-      .borderRadius(20)
-      .border({ width: 1, color: '#D7E6ED' });
-    }
-    .width('100%');
-  }
+      .width('100%');
 
-  private getPendingCompletionCount(): number {
-    return this.recordedMaterials.filter((item: MaterialRecord): boolean => item.needsCompletion).length;
-  }
+      Row({ space: 12 }) {
+        Column()
+          .width(10)
+          .height(58)
+          .borderRadius(8)
+          .linearGradient({
+            direction: GradientDirection.Top,
+            repeating: false,
+            colors: [[UiTokens.aiPrimary, 0.0], [UiTokens.primarySoft, 1.0]]
+          });
 
-  private getReadyCount(): number {
-    return this.recordedMaterials.filter((item: MaterialRecord): boolean => !item.needsCompletion).length;
-  }
+        Column({ space: 6 }) {
+          Text('集中管理已录入的材料')
+            .fontSize(15)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary);
 
-  @Builder
-  private buildSectionHeader() {
-    Row() {
-      Column({ space: 4 }) {
-        Text('库存列表')
-          .fontSize(22)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#173240');
-
-        Text('点开卡片即可快速修改库存或补全信息。')
-          .fontSize(12)
-          .fontColor('#738590');
+          Text('已录入 ' + this.recordedMaterials.length.toString() + ' 项材料，支持扫码、搜索和批量管理。')
+            .fontSize(12)
+            .fontColor(UiTokens.textSecondary)
+            .lineHeight(18);
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start);
       }
-      .alignItems(HorizontalAlign.Start);
-
-      Blank();
-
-      Button('刷新', { type: ButtonType.Capsule })
-        .height(34)
-        .fontSize(12)
-        .fontWeight(FontWeight.Bold)
-        .fontColor('#245C82')
-        .backgroundColor('#E8F5FB')
-        .enabled(!this.loading)
-        .onClick(() => {
-          void this.refreshRecordedMaterials();
-        });
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+      .backgroundColor(UiTokens.aiSurface)
+      .borderRadius(20)
+      .border({ width: 1, color: UiTokens.borderPrimary });
     }
     .width('100%')
-    .alignItems(VerticalAlign.Bottom);
+    .alignItems(HorizontalAlign.Start);
   }
 
   @Builder
   private buildCategoryTabs() {
     Scroll() {
       Row({ space: 10 }) {
-        ForEach(MATERIAL_LIST_CATEGORIES, (item: MaterialListCategory) => {
+        ForEach(INVENTORY_TABS, (item: InventoryTab) => {
           Text(item.title)
             .fontSize(13)
-            .fontWeight(item.id === this.activeMaterialCategoryId ? FontWeight.Bold : FontWeight.Medium)
-            .fontColor(item.id === this.activeMaterialCategoryId ? '#173240' : '#6E818D')
+            .fontWeight(item.id === this.activeTabId ? FontWeight.Bold : FontWeight.Medium)
+            .fontColor(item.id === this.activeTabId ? UiTokens.textPrimary : UiTokens.textSecondary)
             .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-            .backgroundColor(item.id === this.activeMaterialCategoryId ? '#DDF5F1' : '#FFFFFF')
+            .backgroundColor(item.id === this.activeTabId ? UiTokens.pageAccentMint : UiTokens.surfacePrimary)
             .borderRadius(18)
-            .border({ width: 1, color: item.id === this.activeMaterialCategoryId ? '#BFE7E6' : '#D7E6ED' })
+            .border({ width: 1, color: item.id === this.activeTabId ? UiTokens.borderStrong : UiTokens.borderPrimary })
             .onClick(() => {
-              this.activeMaterialCategoryId = item.id;
+              this.activeTabId = item.id;
             });
         });
       }
@@ -319,149 +478,352 @@ export struct BartendingStationPage {
   }
 
   @Builder
-  private buildMaterialTag(label: string, bgColor: string, textColor: string) {
+  private buildTag(label: string, textColor: string, bgColor: string) {
     Text(label)
       .fontSize(11)
       .fontColor(textColor)
-      .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+      .padding({ left: 8, right: 8, top: 5, bottom: 5 })
       .backgroundColor(bgColor)
-      .borderRadius(14);
+      .borderRadius(12);
+  }
+
+  @Builder
+  private buildDeleteTrigger(item: MaterialRecord) {
+    Row() {
+      if (this.batchMode) {
+        if (this.pendingDeleteIds.indexOf(item.id) !== -1) {
+          Text('✓')
+            .fontSize(12)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.surfacePrimary);
+        } else {
+          Text('')
+            .fontSize(12);
+        }
+      } else {
+        Text('x')
+          .fontSize(12)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.textTertiary);
+      }
+    }
+    .width(28)
+    .height(28)
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor(this.batchMode
+      ? (this.pendingDeleteIds.indexOf(item.id) !== -1 ? UiTokens.primary : UiTokens.pageGradientMiddle)
+      : UiTokens.surfacePrimary)
+    .borderRadius(14)
+    .border({ width: 1, color: this.batchMode ? UiTokens.borderSecondary : UiTokens.borderPrimary })
+    .onClick(() => {
+      if (this.batchMode) {
+        this.togglePendingDelete(item.id);
+        return;
+      }
+      void this.removeMaterial(item);
+    });
   }
 
   @Builder
   private buildMaterialCard(item: MaterialRecord) {
     Stack({ alignContent: Alignment.TopEnd }) {
-      Row({ space: 12 }) {
-        Row() {
-          Text(item.badge)
-            .fontSize(15)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(item.accentColor);
-        }
-        .width(50)
-        .height(50)
-        .justifyContent(FlexAlign.Center)
-        .backgroundColor(item.softColor)
-        .borderRadius(18);
+      Column({ space: 10 }) {
+        this.buildMaterialImage(item);
 
-        Column({ space: 8 }) {
-          Text(item.name)
-            .fontSize(17)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
+        Text(item.name)
+          .fontSize(15)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.textPrimary)
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis });
 
-          Text(item.subtitle)
-            .fontSize(12)
-            .fontColor('#72838F')
-            .lineHeight(18)
-            .maxLines(2);
+        Text(this.resolveAddDateText(item.addedAt))
+          .fontSize(11)
+          .fontColor(UiTokens.textSecondary);
 
-          Row({ space: 8 }) {
-            this.buildMaterialTag(item.categoryName, item.softColor, item.accentColor);
-            this.buildMaterialTag(item.amountText, '#F4F8FB', '#5F7684');
-          }
-          .width('100%');
-        }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Start);
-      }
-      .width('100%')
-      .padding(16)
-      .backgroundColor('#FFFFFF')
-      .borderRadius(22)
-      .border({ width: 1, color: '#D7E6ED' });
-
-      if (item.needsCompletion) {
-        Row() {
-          Text('!')
-            .fontSize(12)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#A66A1C');
-        }
-        .width(22)
-        .height(22)
-        .justifyContent(FlexAlign.Center)
-        .backgroundColor('#F8E9CF')
-        .borderRadius(11)
-        .margin({ top: 10, right: 10 });
-      }
-    }
-    .width('100%')
-    .onClick(() => {
-      router.pushUrl({
-        url: 'features/station/pages/MaterialEditorPage',
-        params: {
-          materialId: item.id
-        }
-      }, 3000);
-    });
-  }
-
-  private getDisplayedMaterials(): MaterialRecord[] {
-    if (this.activeMaterialCategoryId === 'all') {
-      return this.recordedMaterials;
-    }
-    return this.recordedMaterials.filter((item: MaterialRecord): boolean => item.categoryId === this.activeMaterialCategoryId);
-  }
-
-  build() {
-    Scroll() {
-      Column({ space: 18 }) {
-        this.buildHeader();
-        this.buildOverviewCard();
-        this.buildQuickActions();
-        this.buildSectionHeader();
-        this.buildCategoryTabs();
-
-        Column({ space: 12 }) {
-          if (this.loading) {
-            Column({ space: 8 }) {
-              Text('正在加载材料台')
-                .fontSize(18)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#173240');
-
-              Text('稍等一下，正在同步你的材料列表。')
-                .fontSize(12)
-                .fontColor('#72838F');
-            }
-            .width('100%')
-            .padding(24)
-            .backgroundColor('#FFFFFF')
-            .borderRadius(22)
-            .border({ width: 1, color: '#D7E6ED' })
-            .alignItems(HorizontalAlign.Start);
-          }
-          ForEach(this.getDisplayedMaterials(), (item: MaterialRecord) => {
-            this.buildMaterialCard(item);
-          });
-          if (!this.loading && this.getDisplayedMaterials().length === 0) {
-            Column({ space: 8 }) {
-              Text('这个分类下还没有材料')
-                .fontSize(18)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#173240');
-
-              Text('先通过扫码或列表选择把材料加进来。')
-                .fontSize(12)
-                .fontColor('#72838F');
-            }
-            .width('100%')
-            .padding(24)
-            .backgroundColor('#FFFFFF')
-            .borderRadius(22)
-            .border({ width: 1, color: '#D7E6ED' })
-            .alignItems(HorizontalAlign.Start);
-          }
+        Row({ space: 6 }) {
+          this.buildTag(
+            item.statusText,
+            item.statusText === '我有' ? UiTokens.success : UiTokens.warning,
+            item.statusText === '我有' ? UiTokens.successSoft : UiTokens.warningSoft
+          );
+          this.buildTag(item.categoryName, item.accentColor, item.softColor);
         }
         .width('100%');
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 20, bottom: 110 });
+      .alignItems(HorizontalAlign.Start);
+
+      this.buildDeleteTrigger(item);
+    }
+    .width('100%')
+    .height(220)
+    .padding(12)
+    .backgroundColor(UiTokens.surfacePrimary)
+    .borderRadius(18)
+    .border({ width: 1, color: UiTokens.borderPrimary })
+    .onClick(() => {
+      if (this.batchMode) {
+        this.togglePendingDelete(item.id);
+        return;
+      }
+      this.openMaterialPreview(item);
+    });
+  }
+
+  @Builder
+  private buildLoadingCard() {
+    Column({ space: 8 }) {
+      LoadingProgress()
+        .width(24)
+        .height(24)
+        .color(UiTokens.primary);
+
+      Text('正在同步材料...')
+        .fontSize(12)
+        .fontColor(UiTokens.textSecondary);
+    }
+    .width('100%')
+    .height(160)
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor(UiTokens.surfacePrimary)
+    .borderRadius(18)
+    .border({ width: 1, color: UiTokens.borderPrimary });
+  }
+
+  @Builder
+  private buildEmptyState() {
+    Column({ space: 12 }) {
+      Image($r('app.media.icon_cocktail'))
+        .width(88)
+        .height(88)
+        .opacity(0.9)
+        .objectFit(ImageFit.Contain);
+
+      Text('还没材料？快扫码添加一个吧')
+        .fontSize(16)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(UiTokens.textPrimary)
+        .textAlign(TextAlign.Center);
+
+      Text('点底部 + 进入扫码或手动挑选，录入后会自动刷新列表。')
+        .fontSize(12)
+        .fontColor(UiTokens.textSecondary)
+        .textAlign(TextAlign.Center)
+        .lineHeight(18);
+    }
+    .width('100%')
+    .padding({ left: 24, right: 24, top: 28, bottom: 28 })
+    .backgroundColor(UiTokens.surfacePrimary)
+    .borderRadius(20)
+    .border({ width: 1, color: UiTokens.borderPrimary });
+  }
+
+  @Builder
+  private buildInventoryGrid() {
+    if (this.loading) {
+      Grid() {
+        ForEach([0, 1, 2, 3], (item: number) => {
+          GridItem() {
+            this.buildLoadingCard();
+          }
+        });
+      }
+      .columnsTemplate('1fr 1fr')
+      .columnsGap(10)
+      .rowsGap(10)
+      .width('100%');
+    } else if (this.getDisplayedMaterials().length === 0) {
+      this.buildEmptyState();
+    } else {
+      Grid() {
+        ForEach(this.getDisplayedMaterials(), (item: MaterialRecord) => {
+          GridItem() {
+            this.buildMaterialCard(item);
+          }
+        });
+      }
+      .columnsTemplate('1fr 1fr')
+      .columnsGap(10)
+      .rowsGap(10)
+      .width('100%');
+    }
+  }
+
+  @Builder
+  private buildFloatingActionBar() {
+    Column({ space: 12 }) {
+      if (this.batchMode) {
+        Row({ space: 10 }) {
+          Text('已选 (' + this.pendingDeleteIds.length.toString() + ')')
+            .fontSize(12)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary);
+
+          Blank();
+
+          Button(this.deleteBusy ? '移出中...' : '批量移出', { type: ButtonType.Capsule })
+            .height(34)
+            .fontSize(12)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.error)
+            .backgroundColor(UiTokens.errorSoft)
+            .enabled(!this.deleteBusy && this.pendingDeleteIds.length > 0)
+            .onClick(() => {
+              void this.removeSelectedMaterials();
+            });
+        }
+        .width('100%')
+        .padding({ left: 14, right: 14, top: 10, bottom: 10 })
+        .backgroundColor(UiTokens.surfacePrimary)
+        .borderRadius(18)
+        .border({ width: 1, color: UiTokens.borderPrimary });
+      }
+
+      Column({ space: 6 }) {
+        Row() {
+          Text('+')
+            .fontSize(32)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.surfacePrimary);
+        }
+        .width(78)
+        .height(78)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor(UiTokens.primary)
+        .borderRadius(39)
+        .shadow({ radius: 20, color: UiTokens.shadowMedium, offsetX: 0, offsetY: 8 });
+
+        Text('添加材料')
+          .fontSize(12)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.textPrimary);
+      }
+      .onClick(() => {
+        this.showAddSheet = true;
+      });
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, bottom: 110 })
+    .alignItems(HorizontalAlign.Center);
+  }
+
+  @Builder
+  private buildAddEntryAction(title: string, detail: string, accentColor: string, softColor: string, onTap: () => void) {
+    Row({ space: 12 }) {
+      Row() {
+        Text(title.substring(0, 1))
+          .fontSize(17)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(accentColor);
+      }
+      .width(44)
+      .height(44)
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor(softColor)
+      .borderRadius(16);
+
+      Column({ space: 4 }) {
+        Text(title)
+          .fontSize(16)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.textPrimary);
+
+        Text(detail)
+          .fontSize(12)
+          .fontColor(UiTokens.textSecondary)
+          .lineHeight(18)
+          .maxLines(2);
+      }
+      .layoutWeight(1)
+      .alignItems(HorizontalAlign.Start);
+    }
+    .width('100%')
+    .padding(14)
+    .backgroundColor(UiTokens.surfacePrimary)
+    .borderRadius(18)
+    .border({ width: 1, color: UiTokens.borderPrimary })
+    .onClick(() => {
+      onTap();
+    });
+  }
+
+  @Builder
+  private buildAddSheet() {
+    Column({ space: 12 }) {
+      Text('添加材料')
+        .fontSize(20)
+        .fontWeight(FontWeight.Bold)
+        .fontColor(UiTokens.textPrimary);
+
+      Text('选择录入方式：扫码快速识别，或进入材料百科手动挑选。')
+        .fontSize(12)
+        .fontColor(UiTokens.textSecondary)
+        .lineHeight(18)
+        .width('100%');
+
+      this.buildAddEntryAction('扫码添加', '调起相机后自动识别条码，一键存入材料库。', UiTokens.primary, UiTokens.pageAccentMint, () => {
+        this.showAddSheet = false;
+        router.pushUrl({ url: 'features/station/pages/MaterialScannerPage' }, 3000);
+      });
+
+      this.buildAddEntryAction('手动挑选', '进入材料百科进行多选，适合水果、调味和装饰材料。', UiTokens.primary, UiTokens.primarySoft, () => {
+        this.showAddSheet = false;
+        router.pushUrl({ url: 'features/station/pages/MaterialLibraryPage' }, 3000);
+      });
+
+      Button('取消', { type: ButtonType.Capsule })
+        .width('100%')
+        .height(42)
+        .fontSize(13)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(UiTokens.textSecondary)
+        .backgroundColor(UiTokens.pageGradientMiddle)
+        .onClick(() => {
+          this.showAddSheet = false;
+        });
+    }
+    .width('100%')
+    .padding({ left: 16, right: 16, top: 18, bottom: 24 })
+    .backgroundColor(UiTokens.pageBackground)
+    .borderRadius({ topLeft: 24, topRight: 24 });
+  }
+
+  build() {
+    Stack({ alignContent: Alignment.Bottom }) {
+      Scroll() {
+        Column({ space: 16 }) {
+          this.buildHeader();
+          this.buildCategoryTabs();
+          this.buildInventoryGrid();
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: 18, bottom: 228 });
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(UiTokens.pageBackground)
+      .scrollBar(BarState.Off);
+
+      this.buildFloatingActionBar();
+
+      if (this.materialPreviewVisible) {
+        MaterialImagePreviewOverlay({
+          title: this.getPreviewTitle(),
+          imageUrl: this.getPreviewImageUrl(),
+          primaryTag: this.getPreviewPrimaryTag(),
+          secondaryTag: this.getPreviewSecondaryTag(),
+          onClose: () => {
+            this.closeMaterialPreview();
+          }
+        });
+      }
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F4F8FB')
-    .scrollBar(BarState.Off);
+    .backgroundColor(UiTokens.pageBackground)
+    .bindSheet(this.showAddSheet, this.buildAddSheet, {
+      showClose: false
+    });
   }
 }

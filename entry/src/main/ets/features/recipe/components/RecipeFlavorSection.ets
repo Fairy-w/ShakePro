@@ -1,5 +1,6 @@
 import { EMPTY_SYSTEM_RECIPE, FlavorMetric, SystemRecipe, getFlavorMetricList } from '../model/SystemRecipeData';
 import { RecipeInlineHeader } from './RecipeInlineHeader';
+import { UiTokens } from '../../../common/constants/UiTokens';
 
 @Component
 export struct RecipeFlavorSection {
@@ -9,11 +10,11 @@ export struct RecipeFlavorSection {
   private buildTag(text: string) {
     Text(text)
       .fontSize(11)
-      .fontColor('#F6E9D6')
+      .fontColor(UiTokens.textAccent)
       .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-      .backgroundColor('#241B16')
+      .backgroundColor(UiTokens.primarySoft)
       .borderRadius(14)
-      .border({ width: 1, color: '#3C3028' });
+      .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   @Builder
@@ -22,14 +23,14 @@ export struct RecipeFlavorSection {
       Text(item.label)
         .width(54)
         .fontSize(12)
-        .fontColor('#E8DAC5');
+        .fontColor(UiTokens.textSecondary);
 
       Stack({ alignContent: Alignment.Start }) {
         Row()
           .width('100%')
           .height(8)
           .borderRadius(4)
-          .backgroundColor('#3B2E26');
+          .backgroundColor(UiTokens.surfaceSecondary);
 
         Row()
           .width(`${item.value * 20}%`)
@@ -38,7 +39,7 @@ export struct RecipeFlavorSection {
           .linearGradient({
             direction: GradientDirection.Left,
             repeating: false,
-            colors: [['#E7CDA7', 0.0], ['#9AD0DD', 1.0]]
+            colors: [[UiTokens.accentWarm, 0.0], [UiTokens.primary, 1.0]]
           });
       }
       .layoutWeight(1)
@@ -46,7 +47,7 @@ export struct RecipeFlavorSection {
 
       Text(`${item.value}/5`)
         .fontSize(11)
-        .fontColor('#CDBCA5');
+        .fontColor(UiTokens.textTertiary);
     }
     .width('100%')
     .alignItems(VerticalAlign.Center);
@@ -76,10 +77,10 @@ export struct RecipeFlavorSection {
       }
       .width('100%')
       .padding({ left: 18, right: 18, top: 18, bottom: 18 })
-      .backgroundColor('#1B1511')
+      .backgroundColor(UiTokens.surfacePrimary)
       .borderRadius(30)
-      .border({ width: 1, color: '#312620' })
-      .shadow({ radius: 20, color: '#140B061E', offsetX: 0, offsetY: 12 });
+      .border({ width: 1, color: UiTokens.borderPrimary })
+      .shadow({ radius: 20, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 12 });
     }
     .width('100%');
   }

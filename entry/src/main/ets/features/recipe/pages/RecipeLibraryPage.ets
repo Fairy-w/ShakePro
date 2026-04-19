@@ -1,6 +1,7 @@
 import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
 import router from '@ohos.router';
+import { UiTokens } from '../../../common/constants/UiTokens';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { cocktailRepository } from '../../cocktail/repository/CocktailRepository';
 import {
@@ -300,27 +301,58 @@ export struct RecipeLibraryPage {
       Text('配方库')
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#173240');
+        .fontColor(UiTokens.textPrimary);
 
       Text('左侧按分类切换，右侧展示酒谱列表，点击后进入独立详情页。')
         .fontSize(13)
-        .fontColor('#72838F')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20);
 
       Row({ space: 8 }) {
         Text(this.getCurrentCategory().label)
           .fontSize(12)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#184B5E')
+          .fontColor(UiTokens.textAccent)
           .padding({ left: 12, right: 12, top: 7, bottom: 7 })
-          .backgroundColor('#DDF5F1')
+          .backgroundColor(UiTokens.pageAccentMint)
           .borderRadius(14);
 
         Text(this.isLoading ? '同步中...' : this.buildRecipeCountText())
           .fontSize(12)
-          .fontColor('#5F7D8D');
+          .fontColor(UiTokens.textSecondary);
       }
       .width('100%');
+
+      Row({ space: 12 }) {
+        Column()
+          .width(10)
+          .height(58)
+          .borderRadius(8)
+          .linearGradient({
+            direction: GradientDirection.Top,
+            repeating: false,
+            colors: [[UiTokens.primary, 0.0], [UiTokens.aiSoft, 1.0]]
+          });
+
+        Column({ space: 6 }) {
+          Text('先看经典酒谱，再决定下一步')
+            .fontSize(15)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary);
+
+          Text('这里更适合找灵感、挑分类和看标准做法，确认方向后再进入详情页继续查看。')
+            .fontSize(12)
+            .fontColor(UiTokens.textSecondary)
+            .lineHeight(18);
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start);
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+      .backgroundColor(UiTokens.surfacePrimary)
+      .borderRadius(20)
+      .border({ width: 1, color: UiTokens.borderPrimary });
     }
     .width('100%')
     .alignItems(HorizontalAlign.Start);
@@ -333,21 +365,21 @@ export struct RecipeLibraryPage {
         Text(item.label)
           .fontSize(14)
           .fontWeight(item.id === this.currentCategoryId ? FontWeight.Bold : FontWeight.Medium)
-          .fontColor(item.id === this.currentCategoryId ? '#173240' : '#71828D')
+          .fontColor(item.id === this.currentCategoryId ? UiTokens.textPrimary : UiTokens.textSecondary)
           .textAlign(TextAlign.Center);
 
         Text(item.description)
           .fontSize(10)
-          .fontColor(item.id === this.currentCategoryId ? '#507181' : '#8A98A1')
+          .fontColor(item.id === this.currentCategoryId ? UiTokens.textAccent : UiTokens.textTertiary)
           .textAlign(TextAlign.Center)
           .maxLines(2);
       }
       .width('100%')
       .padding({ top: 14, bottom: 14, left: 10, right: 10 })
-      .backgroundColor(item.id === this.currentCategoryId ? '#DDF5F1' : '#FFFFFF')
+      .backgroundColor(item.id === this.currentCategoryId ? UiTokens.pageAccentMint : UiTokens.surfacePrimary)
       .borderRadius(20)
-      .border({ width: 1, color: item.id === this.currentCategoryId ? '#BFE7E6' : '#D7E6ED' })
-      .shadow({ radius: item.id === this.currentCategoryId ? 12 : 0, color: '#9AD0DD12', offsetX: 0, offsetY: 6 })
+      .border({ width: 1, color: item.id === this.currentCategoryId ? UiTokens.borderStrong : UiTokens.borderPrimary })
+      .shadow({ radius: item.id === this.currentCategoryId ? 12 : 0, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 6 })
       .onClick(() => {
         this.selectCategory(item, index);
       });
@@ -361,24 +393,24 @@ export struct RecipeLibraryPage {
       LoadingProgress()
         .width(26)
         .height(26)
-        .color('#173240');
+        .color(UiTokens.textPrimary);
 
       Text('正在同步配方库...')
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#173240');
+        .fontColor(UiTokens.textPrimary);
 
       Text('已读取左侧分类，正在加载匹配的鸡尾酒列表。')
         .fontSize(12)
-        .fontColor('#71828D')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(18)
         .textAlign(TextAlign.Center);
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 28, bottom: 28 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
+    .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   @Builder
@@ -387,18 +419,18 @@ export struct RecipeLibraryPage {
       Text('配方库加载失败')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#173240');
+        .fontColor(UiTokens.textPrimary);
 
       Text(this.errorMessage)
         .fontSize(13)
-        .fontColor('#6E818D')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20)
         .textAlign(TextAlign.Center);
 
       if (this.traceId.length > 0) {
         Text(`traceId: ${this.traceId}`)
           .fontSize(11)
-          .fontColor('#8EA1AC')
+          .fontColor(UiTokens.textTertiary)
           .textAlign(TextAlign.Center);
       }
 
@@ -406,8 +438,8 @@ export struct RecipeLibraryPage {
         .height(42)
         .fontSize(14)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#173240')
-        .backgroundColor('#DDF5F1')
+        .fontColor(UiTokens.textPrimary)
+        .backgroundColor(UiTokens.pageAccentMint)
         .borderRadius(16)
         .padding({ left: 18, right: 18 })
         .onClick(() => {
@@ -416,9 +448,9 @@ export struct RecipeLibraryPage {
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 24, bottom: 24 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
+    .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   @Builder
@@ -427,20 +459,20 @@ export struct RecipeLibraryPage {
       Text('当前分类还没有可展示的配方')
         .fontSize(17)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#173240')
+        .fontColor(UiTokens.textPrimary)
         .textAlign(TextAlign.Center);
 
       Text(`已按「${this.getCurrentCategory().label}」筛选，暂未找到完全匹配的酒谱。`)
         .fontSize(12)
-        .fontColor('#71828D')
+        .fontColor(UiTokens.textSecondary)
         .lineHeight(20)
         .textAlign(TextAlign.Center);
     }
     .width('100%')
     .padding({ left: 18, right: 18, top: 28, bottom: 28 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
+    .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   @Builder
@@ -460,17 +492,17 @@ export struct RecipeLibraryPage {
             Text(this.formatRecipeIndex(index))
               .fontSize(11)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#184B5E')
+              .fontColor(UiTokens.textAccent)
               .padding({ left: 9, right: 9, top: 6, bottom: 6 })
-              .backgroundColor('#DDF5F1')
+              .backgroundColor(UiTokens.pageAccentMint)
               .borderRadius(14);
 
             if (this.normalizeCategory(item.category).length > 0) {
               Text(this.normalizeCategory(item.category))
                 .fontSize(11)
-                .fontColor('#5F7D8D')
+                .fontColor(UiTokens.textSecondary)
                 .padding({ left: 9, right: 9, top: 6, bottom: 6 })
-                .backgroundColor('#F2F7F9')
+                .backgroundColor(UiTokens.surfaceMuted)
                 .borderRadius(14);
             }
           }
@@ -479,13 +511,13 @@ export struct RecipeLibraryPage {
             Text(item.name)
               .fontSize(18)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#173240')
+              .fontColor(UiTokens.textPrimary)
               .maxLines(2);
 
             if (item.englishName && item.englishName.trim().length > 0) {
               Text(item.englishName)
                 .fontSize(12)
-                .fontColor('#6C8793')
+                .fontColor(UiTokens.textSecondary)
                 .maxLines(1);
             }
           }
@@ -495,18 +527,18 @@ export struct RecipeLibraryPage {
             if (item.difficulty && item.difficulty.trim().length > 0) {
               Text(item.difficulty)
                 .fontSize(11)
-                .fontColor('#3E6170')
+                .fontColor(UiTokens.textAccent)
                 .padding({ left: 8, right: 8, top: 6, bottom: 6 })
-                .backgroundColor('#EAF4F7')
+                .backgroundColor(UiTokens.surfaceSecondary)
                 .borderRadius(12);
             }
 
             if (item.abv && item.abv.trim().length > 0) {
               Text(item.abv)
                 .fontSize(11)
-                .fontColor('#7C5D46')
+                .fontColor(UiTokens.warning)
                 .padding({ left: 8, right: 8, top: 6, bottom: 6 })
-                .backgroundColor('#FFF4E6')
+                .backgroundColor(UiTokens.warningSoft)
                 .borderRadius(12);
             }
           }
@@ -514,17 +546,17 @@ export struct RecipeLibraryPage {
           Text('查看配方详情')
             .fontSize(12)
             .fontWeight(FontWeight.Medium)
-            .fontColor('#184B5E');
+            .fontColor(UiTokens.textAccent);
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start);
       }
       .width('100%')
       .padding(16)
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(UiTokens.surfacePrimary)
       .borderRadius(24)
-      .border({ width: 1, color: '#D7E6ED' })
-      .shadow({ radius: 14, color: '#90A9B008', offsetX: 0, offsetY: 8 })
+      .border({ width: 1, color: UiTokens.borderPrimary })
+      .shadow({ radius: 14, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 8 })
       .onClick(() => {
         this.openRecipeDetail(item);
       });
@@ -556,14 +588,14 @@ export struct RecipeLibraryPage {
         .linearGradient({
           direction: GradientDirection.Top,
           repeating: false,
-          colors: [['#F7FBFD', 0.0], ['#EEF5F8', 0.56], ['#E9F1F5', 1.0]]
+          colors: [[UiTokens.pageGradientStart, 0.0], [UiTokens.pageGradientMiddle, 0.56], [UiTokens.pageGradientEnd, 1.0]]
         });
 
       Column()
         .width(240)
         .height(240)
         .borderRadius(120)
-        .backgroundColor('#D8EEF4')
+        .backgroundColor(UiTokens.pageAccentBlue)
         .opacity(0.52)
         .position({ x: -70, y: -36 });
 
@@ -571,7 +603,7 @@ export struct RecipeLibraryPage {
         .width(220)
         .height(220)
         .borderRadius(110)
-        .backgroundColor('#DDF5F1')
+        .backgroundColor(UiTokens.pageAccentMint)
         .opacity(0.72)
         .position({ x: 250, y: 600 });
 

@@ -1,5 +1,5 @@
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
+import { ApiResponse, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
 import { MaterialDraft, SelectableMaterial } from '../model/BartendingStationMockData';
 import { stationMaterialApi } from '../api/StationMaterialApi';
 import {
@@ -16,7 +16,6 @@ import {
   normalizeCategoryId,
   normalizeString,
   normalizeTags,
-  toApiRemainLevel,
   toMaterialDraft,
   toNullableText,
   toSelectableMaterial
@@ -73,9 +72,10 @@ class StationMaterialRepository {
     hilog.info(
       STATION_MATERIAL_REPO_LOG_DOMAIN,
       STATION_MATERIAL_REPO_LOG_TAG,
-      'save scanned material name=%{public}s barcode=%{public}s',
+      'save scanned material name=%{public}s barcode=%{public}s hasItem=%{public}s',
       payload.name ?? '',
-      payload.barcode
+      payload.barcode,
+      String(payload.hasItem)
     );
 
     const response = await stationMaterialApi.saveScannedUserMaterial(payload);
@@ -89,9 +89,9 @@ class StationMaterialRepository {
     hilog.info(
       STATION_MATERIAL_REPO_LOG_DOMAIN,
       STATION_MATERIAL_REPO_LOG_TAG,
-      'save manual material materialId=%{public}s name=%{public}s',
+      'save manual material materialId=%{public}s hasItem=%{public}s',
       String(payload.materialId),
-      draft.name
+      String(payload.hasItem)
     );
 
     const response = await stationMaterialApi.saveManualUserMaterial(payload);
@@ -106,14 +106,13 @@ class StationMaterialRepository {
     return this.saveManualMaterial(draft);
   }
 
-  async batchSaveManualMaterials(items: SelectableMaterial[]): Promise<MaterialDraft[]> {
+  async batchSaveManualMaterials(items: SelectableMaterial[], hasItem: boolean = true): Promise<MaterialDraft[]> {
     const payloadItems: SaveManualUserMaterialBatchItem[] = items
       .filter((item: SelectableMaterial): boolean => typeof item.materialId === 'number' && item.materialId > 0)
       .map((item: SelectableMaterial): SaveManualUserMaterialBatchItem => {
         return {
           materialId: item.materialId!,
-          hasItem: true,
-          remainLevel: item.categoryId === 'fruit' || item.categoryId === 'glassware' ? null : 'full'
+          hasItem
         } as SaveManualUserMaterialBatchItem;
       });
 
@@ -169,9 +168,6 @@ class StationMaterialRepository {
       brand: toNullableText(draft.brand),
       categoryId: this.resolveCategoryIdForSave(draft),
       source: 'scan',
-      capacityText: toNullableText(draft.capacityText),
-      remainLevel: toApiRemainLevel(draft.remainLevel),
-      opened: draft.opened === true,
       hasItem: draft.hasItem === true,
       tags: normalizeTags(draft.tags)
     };
@@ -191,9 +187,6 @@ class StationMaterialRepository {
       source: 'manual',
       brand: toNullableText(draft.brand),
       categoryId: this.resolveCategoryIdForSave(draft),
-      capacityText: toNullableText(draft.capacityText),
-      remainLevel: toApiRemainLevel(draft.remainLevel),
-      opened: draft.opened === true,
       hasItem: draft.hasItem === true,
       tags: normalizeTags(draft.tags)
     };
@@ -263,13 +256,12 @@ class StationMaterialRepository {
     }
     return response.data;
   }
-
   private unwrapListResponse<T>(response: ApiResponse<T[]>, fallbackMessage: string): T[] {
     const data = this.unwrapResponse<T[]>(response, fallbackMessage);
-    if (!Array.isArray(data)) {
-      return [];
+    if (Array.isArray(data)) {
+      return data;
     }
-    return data;
+    return [];
   }
 
   private unwrapVoidResponse(response: ApiResponse<void>, fallbackMessage: string): void {
@@ -283,21 +275,18 @@ class StationMaterialRepository {
     });
   }
 
-  private resolveErrorMessage(code: number | undefined, message: string | undefined, fallbackMessage: string): string {
-    if (code === BARCODE_PARAM_ERROR_CODE) {
-      return '条码格式不正确，请检查后重试';
+  private resolveErrorMessage(code: number, message: string | null | undefined, fallbackMessage: string): string {
+    const normalizedMessage = typeof message === 'string' ? message.trim() : '';
+    if (normalizedMessage.length > 0) {
+      return normalizedMessage;
     }
     if (code === BARCODE_NOT_FOUND_CODE) {
-      return '未识别到商品信息，可手动补录';
+      return '没有识别到这个条码对应的材料';
     }
     if (code === BARCODE_SERVICE_ERROR_CODE) {
-      return '条码识别服务异常，请稍后再试';
+      return '条码识别服务暂时不可用，请稍后重试';
     }
-    return getApiMessage({
-      code: code ?? -1,
-      message: message ?? '',
-      traceId: undefined
-    } as ApiResponse<Object>, fallbackMessage);
+    return fallbackMessage;
   }
 }
 

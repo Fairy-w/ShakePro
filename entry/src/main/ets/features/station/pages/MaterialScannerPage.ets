@@ -3,6 +3,11 @@ import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
 import abilityAccessCtrl, { Permissions } from '@ohos.abilityAccessCtrl';
 import { customScan, scanCore } from '@kit.ScanKit';
+import {
+  MaterialImagePreviewOverlay,
+  MaterialPreviewTagStyle,
+  resolveMaterialPreviewImageUrl
+} from '../../../common/components/MaterialImagePreviewOverlay';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { MaterialDraft } from '../model/BartendingStationMockData';
 import { saveMaterialDraft } from '../model/MaterialStationStore';
@@ -41,6 +46,8 @@ export struct MaterialScannerPage {
   @State private requestBusy: boolean = false;
   @State private previewReady: boolean = false;
   @State private scannerStatus: string = '正在准备相机预览...';
+  @State private materialPreviewVisible: boolean = false;
+  @State private previewTarget: MaterialDraft | undefined = undefined;
 
   private readonly cameraPermissionList: Permissions[] = ['ohos.permission.CAMERA'];
   private readonly previewWidthVp: number = 328;
@@ -139,7 +146,7 @@ export struct MaterialScannerPage {
       return '请将条码保持在黄色扫描框内，系统会自动识别。';
     }
     if (this.previewReady) {
-      return '识别成功后可以直接收录到材料台，也可以稍后再补信息。';
+      return '识别成功后直接标记你现在是否持有，不再补库存细节。';
     }
     return '请稍候，等待扫描组件完成预览初始化。';
   }
@@ -155,6 +162,59 @@ export struct MaterialScannerPage {
       return '实时预览';
     }
     return '预览初始化';
+  }
+
+  private openMaterialPreview(item: MaterialDraft): void {
+    this.previewTarget = item;
+    this.materialPreviewVisible = true;
+  }
+
+  private closeMaterialPreview(): void {
+    this.materialPreviewVisible = false;
+    this.previewTarget = undefined;
+  }
+
+  private getPreviewTitle(): string {
+    return this.previewTarget ? this.previewTarget.name : '';
+  }
+
+  private getPreviewImageUrl(): string {
+    if (!this.previewTarget) {
+      return '';
+    }
+    return resolveMaterialPreviewImageUrl(this.previewTarget);
+  }
+
+  private getPreviewPrimaryTag(): MaterialPreviewTagStyle {
+    if (!this.previewTarget) {
+      return {
+        label: '',
+        textColor: '#245C82',
+        backgroundColor: '#E8F5FB'
+      };
+    }
+    const sourceLabel = this.previewTarget.sourceLabel.trim().length > 0 ? this.previewTarget.sourceLabel : '扫码识别';
+    return {
+      label: sourceLabel,
+      textColor: this.previewTarget.accentColor,
+      backgroundColor: this.previewTarget.softColor
+    };
+  }
+
+  private getPreviewSecondaryTag(): MaterialPreviewTagStyle {
+    if (!this.previewTarget) {
+      return {
+        label: '',
+        textColor: '#2B6C63',
+        backgroundColor: '#EEF6F2'
+      };
+    }
+    const hasItem = this.previewTarget.hasItem;
+    return {
+      label: hasItem ? '我有' : '暂时没有',
+      textColor: hasItem ? '#2B6C63' : '#A66A1C',
+      backgroundColor: hasItem ? '#EEF6F2' : '#FDEEDB'
+    };
   }
 
   private buildScanOptions(): ScanOptions {
@@ -354,7 +414,7 @@ export struct MaterialScannerPage {
       this.scanResult = draft;
       this.manualBarcode = draft.barcode;
       this.showScanResult = true;
-      this.scannerStatus = '识别成功，可直接收录或补充信息';
+      this.scannerStatus = '识别成功，可直接标记有无状态';
       promptAction.showToast({ message: successMessage });
     } catch (error) {
       const message = this.resolveErrorMessage(error as Object, '条码识别失败，请稍后再试');
@@ -368,22 +428,47 @@ export struct MaterialScannerPage {
     }
   }
 
-  private async handleDirectSave(item: MaterialDraft): Promise<void> {
+  private async handleDirectSave(item: MaterialDraft, hasItem: boolean): Promise<void> {
     if (this.requestBusy) {
       return;
     }
 
     if (!(await this.hasAuthorization())) {
-      this.navigateToLogin('请先登录后再收录材料');
+      this.navigateToLogin('请先登录后再保存材料');
       return;
     }
 
     this.requestBusy = true;
     try {
-      const savedDraft = await stationMaterialRepository.saveScannedMaterial(item);
+      const nextDraft: MaterialDraft = {
+        id: item.id,
+        source: item.source,
+        sourceLabel: item.sourceLabel,
+        name: item.name,
+        subtitle: hasItem ? '已识别成功，你当前标记为有。' : '当前只记录有无状态，你标记为暂时没有。',
+        brand: item.brand,
+        categoryId: item.categoryId,
+        imageUrl: item.imageUrl,
+        imageUrlThumb: item.imageUrlThumb,
+        imageUrlCard: item.imageUrlCard,
+        imageUrlDetail: item.imageUrlDetail,
+        barcode: item.barcode,
+        addedAt: item.addedAt,
+        materialId: item.materialId,
+        capacityText: item.capacityText,
+        remainLevel: item.remainLevel,
+        opened: item.opened,
+        hasItem,
+        tags: item.tags.slice(),
+        note: item.note,
+        badge: item.badge,
+        accentColor: item.accentColor,
+        softColor: item.softColor
+      };
+      const savedDraft = await stationMaterialRepository.saveScannedMaterial(nextDraft);
       this.scanResult = savedDraft;
       saveMaterialDraft(savedDraft);
-      promptAction.showToast({ message: savedDraft.name + ' 已直接收录' });
+      promptAction.showToast({ message: hasItem ? savedDraft.name + ' 已标记为我有' : savedDraft.name + ' 已标记为暂时没有' });
       router.back();
     } catch (error) {
       const message = this.resolveErrorMessage(error as Object, '保存材料失败，请稍后再试');
@@ -431,7 +516,7 @@ export struct MaterialScannerPage {
           .fontWeight(FontWeight.Bold)
           .fontColor('#173240');
 
-        Text('扫描识别后可直接收录，也可以先补充信息再保存。')
+        Text('扫描识别后直接标记我有或暂时没有，不再补库存细节。')
           .fontSize(12)
           .fontColor('#72838F');
       }
@@ -655,7 +740,7 @@ export struct MaterialScannerPage {
             void this.startScannerPreview();
           });
 
-        Button('直接手动添加', { type: ButtonType.Capsule })
+        Button('改用列表勾选', { type: ButtonType.Capsule })
           .width(132)
           .height(50)
           .fontSize(14)
@@ -664,12 +749,7 @@ export struct MaterialScannerPage {
           .backgroundColor('#E8F5FB')
           .enabled(!this.requestBusy)
           .onClick(() => {
-            router.pushUrl({
-              url: 'features/station/pages/MaterialEditorPage',
-              params: {
-                materialId: 'hendricks-gin'
-              }
-            }, 3000);
+            router.pushUrl({ url: 'features/station/pages/MaterialLibraryPage' }, 3000);
           });
       }
       .width('100%');
@@ -707,7 +787,7 @@ export struct MaterialScannerPage {
             .fontSize(12)
             .fontColor('#72838F');
 
-          Text(item.subtitle)
+          Text('识别成功后只需要标记你现在是否持有。')
             .fontSize(12)
             .fontColor('#72838F')
             .lineHeight(18)
@@ -726,48 +806,72 @@ export struct MaterialScannerPage {
           .backgroundColor('#E8F5FB')
           .borderRadius(14);
 
-        Text('类别已匹配')
+        Text(item.hasItem ? '当前标记为有' : '当前标记为暂时没有')
           .fontSize(11)
-          .fontColor('#2B6C63')
+          .fontColor(item.hasItem ? '#2B6C63' : '#A66A1C')
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#EEF6F2')
+          .backgroundColor(item.hasItem ? '#EEF6F2' : '#FDEEDB')
           .borderRadius(14);
       }
       .width('100%');
 
+      if (item.tags.length > 0) {
+        Flex({
+          wrap: FlexWrap.Wrap,
+          direction: FlexDirection.Row,
+          justifyContent: FlexAlign.Start
+        }) {
+          ForEach(item.tags.slice(0, 4), (tag: string) => {
+            Text(tag)
+              .fontSize(11)
+              .fontColor(item.accentColor)
+              .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+              .backgroundColor(item.softColor)
+              .borderRadius(14)
+              .margin({ right: 8, bottom: 8 });
+          });
+        }
+        .width('100%');
+      }
+
       Row({ space: 10 }) {
-        Button('直接收录', { type: ButtonType.Capsule })
+        Button('标记为我有', { type: ButtonType.Capsule })
           .layoutWeight(1)
           .height(50)
-          .fontSize(16)
+          .fontSize(15)
           .fontWeight(FontWeight.Bold)
           .fontColor('#FFFFFF')
-          .backgroundColor(item.accentColor)
+          .backgroundColor('#1B596E')
           .enabled(!this.requestBusy)
           .onClick(() => {
-            void this.handleDirectSave(item);
+            void this.handleDirectSave(item, true);
           });
 
-        Button('补信息', { type: ButtonType.Capsule })
-          .width(112)
+        Button('标记为暂时没有', { type: ButtonType.Capsule })
+          .layoutWeight(1)
           .height(50)
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
-          .fontColor(item.accentColor)
-          .backgroundColor(item.softColor)
+          .fontColor('#A66A1C')
+          .backgroundColor('#F8E9CF')
           .enabled(!this.requestBusy)
           .onClick(() => {
-            router.pushUrl({
-              url: 'features/station/pages/MaterialEditorPage',
-              params: {
-                materialId: item.id,
-                source: 'scan',
-                draftJson: JSON.stringify(item)
-              }
-            }, 3000);
+            void this.handleDirectSave(item, false);
           });
       }
       .width('100%');
+
+      Button('查看材料大图', { type: ButtonType.Capsule })
+        .width('100%')
+        .height(42)
+        .fontSize(13)
+        .fontWeight(FontWeight.Medium)
+        .fontColor(item.accentColor)
+        .backgroundColor(item.softColor)
+        .enabled(!this.requestBusy)
+        .onClick(() => {
+          this.openMaterialPreview(item);
+        });
     }
     .width('100%')
     .padding(18)
@@ -777,21 +881,37 @@ export struct MaterialScannerPage {
   }
 
   build() {
-    Scroll() {
-      Column({ space: 18 }) {
-        this.buildHeader();
-        this.buildScannerViewport();
-        this.buildControlPanel();
-        if (this.showScanResult && this.scanResult !== undefined) {
-          this.buildResultCard(this.scanResult);
+    Stack() {
+      Scroll() {
+        Column({ space: 18 }) {
+          this.buildHeader();
+          this.buildScannerViewport();
+          this.buildControlPanel();
+          if (this.showScanResult && this.scanResult !== undefined) {
+            this.buildResultCard(this.scanResult);
+          }
         }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: 20, bottom: 40 });
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 20, bottom: 40 });
+      .height('100%')
+      .backgroundColor('#F4F8FB')
+      .scrollBar(BarState.Off);
+
+      if (this.materialPreviewVisible) {
+        MaterialImagePreviewOverlay({
+          title: this.getPreviewTitle(),
+          imageUrl: this.getPreviewImageUrl(),
+          primaryTag: this.getPreviewPrimaryTag(),
+          secondaryTag: this.getPreviewSecondaryTag(),
+          onClose: () => {
+            this.closeMaterialPreview();
+          }
+        });
+      }
     }
     .width('100%')
-    .height('100%')
-    .backgroundColor('#F4F8FB')
-    .scrollBar(BarState.Off);
+    .height('100%');
   }
 }

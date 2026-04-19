@@ -17,7 +17,12 @@ function cloneMaterialDraft(draft: MaterialDraft): MaterialDraft {
     subtitle: draft.subtitle,
     brand: draft.brand,
     categoryId: draft.categoryId,
+    imageUrl: draft.imageUrl,
+    imageUrlThumb: draft.imageUrlThumb,
+    imageUrlCard: draft.imageUrlCard,
+    imageUrlDetail: draft.imageUrlDetail,
     barcode: draft.barcode,
+    addedAt: draft.addedAt,
     materialId: draft.materialId,
     capacityText: draft.capacityText,
     remainLevel: draft.remainLevel,
@@ -36,6 +41,11 @@ function cloneSelectableMaterial(item: SelectableMaterial): SelectableMaterial {
     id: item.id,
     materialId: item.materialId,
     name: item.name,
+    imageUrl: item.imageUrl,
+    imageUrlThumb: item.imageUrlThumb,
+    imageUrlCard: item.imageUrlCard,
+    imageUrlDetail: item.imageUrlDetail,
+    description: item.description,
     subtitle: item.subtitle,
     categoryId: item.categoryId,
     categoryName: item.categoryName,
@@ -50,48 +60,22 @@ function cloneSelectableMaterial(item: SelectableMaterial): SelectableMaterial {
   };
 }
 
-function shouldNeedsCompletion(draft: MaterialDraft): boolean {
-  const normalizedCategoryId = normalizeCategoryId(draft.categoryId);
-  if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
-    return false;
-  }
-  if (!draft.hasItem) {
-    return false;
-  }
-  if (normalizeString(draft.capacityText, '').length === 0) {
-    return true;
-  }
-  return draft.tags.length === 0;
-}
-
 function buildAmountText(draft: MaterialDraft): string {
-  const normalizedCategoryId = normalizeCategoryId(draft.categoryId);
-  if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
-    return draft.hasItem ? '已标记为有' : '已标记为没有';
-  }
-
-  const capacityText = normalizeString(draft.capacityText, '');
-  if (capacityText.length > 0) {
-    return `${capacityText} · ${normalizeString(draft.remainLevel, '满瓶')}`;
-  }
-  return normalizeString(draft.remainLevel, '信息待补充');
+  return draft.hasItem ? '已标记为有' : '已标记为暂时没有';
 }
 
 function buildSubtitle(draft: MaterialDraft): string {
   const normalizedCategoryId = normalizeCategoryId(draft.categoryId);
-  if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
-    return draft.hasItem ? '已按有无状态记录，可随时修改。' : '已标记为没有，当前不会参与配方匹配。';
+  const sourceLabel = normalizeString(draft.sourceLabel, draft.source === 'scan' ? '扫码录入' : '手动录入');
+
+  if (draft.hasItem) {
+    if (normalizedCategoryId === 'fruit' || normalizedCategoryId === 'glassware') {
+      return sourceLabel + ' · 当前标记为有，可随时改成没有。';
+    }
+    return sourceLabel + ' · 当前标记为有，可参与后续配方匹配。';
   }
 
-  if (!draft.hasItem) {
-    return '当前已标记为缺货，可在编辑页重新恢复。';
-  }
-
-  if (shouldNeedsCompletion(draft)) {
-    return '已加入我的材料，仍可继续补充库存或风味信息。';
-  }
-
-  return '已加入我的材料，可直接参与当前配方匹配。';
+  return sourceLabel + ' · 当前标记为暂时没有，后续可随时恢复。';
 }
 
 function createMaterialRecordFromDraft(draft: MaterialDraft): MaterialRecord {
@@ -102,9 +86,15 @@ function createMaterialRecordFromDraft(draft: MaterialDraft): MaterialRecord {
     subtitle: buildSubtitle(draft),
     categoryId: visualMeta.categoryId,
     categoryName: visualMeta.categoryName,
+    imageUrl: draft.imageUrl,
+    imageUrlThumb: draft.imageUrlThumb,
+    imageUrlCard: draft.imageUrlCard,
+    imageUrlDetail: draft.imageUrlDetail,
+    barcode: draft.barcode,
+    addedAt: draft.addedAt,
     amountText: buildAmountText(draft),
-    statusText: shouldNeedsCompletion(draft) ? '待补全' : (draft.hasItem ? '已补全' : '缺货'),
-    needsCompletion: shouldNeedsCompletion(draft),
+    statusText: draft.hasItem ? '我有' : '暂时没有',
+    needsCompletion: false,
     badge: normalizeString(draft.badge, visualMeta.badge),
     accentColor: normalizeString(draft.accentColor, visualMeta.accentColor),
     softColor: normalizeString(draft.softColor, visualMeta.softColor),

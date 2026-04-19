@@ -1,4 +1,5 @@
 import { EMPTY_SYSTEM_RECIPE, SystemRecipe, resolveRecipeHeroImage } from '../model/SystemRecipeData';
+import { UiTokens } from '../../../common/constants/UiTokens';
 
 @Component
 export struct RecipeHeroCard {
@@ -64,7 +65,7 @@ export struct RecipeHeroCard {
               .fontWeight(FontWeight.Medium)
               .fontColor('#120C08')
               .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-              .backgroundColor('#E7CDA7')
+              .backgroundColor(UiTokens.accentWarm)
               .borderRadius(16);
 
             if (this.canPreview) {
@@ -120,8 +121,8 @@ export struct RecipeHeroCard {
     }
     .width('100%')
     .borderRadius(32)
-    .border({ width: 1, color: '#F0DEC5' })
-    .shadow({ radius: 20, color: '#A27A3A16', offsetX: 0, offsetY: 12 })
+    .border({ width: 1, color: UiTokens.borderWarm })
+    .shadow({ radius: 20, color: UiTokens.shadowMedium, offsetX: 0, offsetY: 12 })
     .onClick(() => {
       if (this.canPreview) {
         this.onPreviewImage();

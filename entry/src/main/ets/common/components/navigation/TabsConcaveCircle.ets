@@ -1,3 +1,4 @@
+import { UiTokens } from '../../constants/UiTokens';
 import { TabMenusInterfaceIRequired } from '../../types/TabMenusInterface';
 
 @Component
@@ -5,10 +6,10 @@ export struct TabsConcaveCircle {
   @Link @Watch('syncSelectedIndex') selectIndex: number;
   @Link tabsMenu: TabMenusInterfaceIRequired[];
   @Prop tabHeight: number = 82;
-  @Prop tabsBgColor: string = '#FFFFFF';
-  @Prop tabsSelectBgColor: string = '#DDF5F1';
-  @Prop tabsFontColor: string = '#6D7F8B';
-  @Prop tabsSelectFontColor: string = '#18323F';
+  @Prop tabsBgColor: string = UiTokens.surfacePrimary;
+  @Prop tabsSelectBgColor: string = UiTokens.aiSoft;
+  @Prop tabsFontColor: string = UiTokens.textSecondary;
+  @Prop tabsSelectFontColor: string = UiTokens.textPrimary;
   renderContent: (index: number) => void = () => {};
 
   @State private animateSelectIndex: number = 0;
@@ -20,7 +21,6 @@ export struct TabsConcaveCircle {
   private syncSelectedIndex(): void {
     this.animateSelectIndex = this.selectIndex;
   }
-
   @Builder
   private buildTabItem(item: TabMenusInterfaceIRequired, index: number) {
     Column({ space: 6 }) {
@@ -28,14 +28,13 @@ export struct TabsConcaveCircle {
         Image(this.selectIndex === index && item.selectImage ? item.selectImage : item.image)
           .width(20)
           .height(20)
-          .opacity(this.selectIndex === index ? 1 : 0.72);
+          .opacity(this.selectIndex === index ? 1 : 0.76);
       }
-      .width(34)
-      .height(34)
+      .width(36)
+      .height(36)
       .justifyContent(FlexAlign.Center)
-      .borderRadius(17)
-      .backgroundColor(this.selectIndex === index ? '#CBEFE8' : '#F2F7FA');
-
+      .borderRadius(18)
+      .backgroundColor(this.selectIndex === index ? UiTokens.aiPrimary : UiTokens.surfaceMuted);
       Text(item.text)
         .fontSize(11)
         .fontWeight(this.selectIndex === index ? FontWeight.Bold : FontWeight.Medium)
@@ -51,7 +50,7 @@ export struct TabsConcaveCircle {
     .backgroundColor(this.selectIndex === index ? this.tabsSelectBgColor : Color.Transparent)
     .border({
       width: this.selectIndex === index ? 1 : 0,
-      color: this.selectIndex === index ? '#C2E4EE' : Color.Transparent
+      color: this.selectIndex === index ? UiTokens.borderStrong : Color.Transparent
     })
     .onClick(() => {
       if (this.selectIndex === index) {
@@ -74,7 +73,7 @@ export struct TabsConcaveCircle {
               .height('100%')
               .borderRadius(20)
               .backgroundColor(this.tabsSelectBgColor)
-              .border({ width: 1, color: '#C2E4EE' });
+              .border({ width: 1, color: UiTokens.borderStrong });
           }
 
           this.buildTabItem(item, index);
@@ -88,7 +87,7 @@ export struct TabsConcaveCircle {
     .padding({ left: 8, right: 8, top: 8, bottom: 8 })
     .backgroundColor(this.tabsBgColor)
     .borderRadius(26)
-    .border({ width: 1, color: '#D8E7EE' })
-    .shadow({ radius: 20, color: '#140E2433', offsetX: 0, offsetY: 10 });
+    .border({ width: 1, color: UiTokens.borderPrimary })
+    .shadow({ radius: 20, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
   }
 }
