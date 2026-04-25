@@ -2,6 +2,7 @@ import common from '@ohos.app.ability.common';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import { UiTokens } from '../../../common/constants/UiTokens';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { AICocktailSessionSnapshot, aiCocktailSessionStore, ChatMessage } from '../../ai/viewmodel/AICocktailSessionStore';
 import { AiGenerateRecipeResponse } from '../../ai/model/AiGenerateRecipeResponse';
@@ -32,7 +33,7 @@ export struct AICocktailPage {
   private readonly quickPromptSamples: string[] = [
     '清爽一点，适合晚餐后',
     '低酒精，女生聚会喝',
-    '只用家里现有材料'
+    '果香明显，适合拍照'
   ];
 
   aboutToAppear(): void {
@@ -94,10 +95,7 @@ export struct AICocktailPage {
   private resolveErrorMessage(error: Object, fallbackMessage: string = '暂时没能生成你的酒单建议'): string {
     const errorObject = error as Record<string, Object>;
     const message = errorObject['message'];
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-    return fallbackMessage;
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, fallbackMessage);
   }
 
   private showError(message: string): void {
@@ -392,36 +390,8 @@ export struct AICocktailPage {
   }
 
   @Builder
-  private buildResultActionBar() {
-    if (!(this.getCurrentRecipes().length === 0 && this.errorMessage.length === 0 && !this.isLoading)) {
-      Column({ space: 10 }) {
-        Button(this.favoriteBusyKey.length > 0 ? '处理中...' : '收藏当前配方')
-          .width('100%')
-          .height(46)
-          .enabled(this.getCurrentRecipes().length > 0 && this.favoriteBusyKey.length === 0)
-          .fontSize(14)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(UiTokens.textPrimary)
-          .backgroundColor(UiTokens.accentWarmSoft)
-          .borderRadius(16)
-          .border({ width: 1, color: UiTokens.borderWarm })
-          .onClick(() => {
-            const recipe: AiGenerateRecipeResponse | undefined = this.getCurrentRecipes()[0];
-            if (recipe) {
-              void this.handleToggleFavorite(recipe);
-            }
-          });
-
-        Blank()
-          .height(24);
-      }
-      .width('100%');
-    }
-  }
-
-  @Builder
   private buildInitialLayout() {
-    Column({ space: 16 }) {
+    Column({ space: 18 }) {
       Column({ space: 10 }) {
         Text('输入一句偏好，AI 会先给你几种可执行方案，再继续结合材料站和酒谱库细化。')
           .fontSize(13)
@@ -431,35 +401,40 @@ export struct AICocktailPage {
       }
       .width('100%');
 
-      Blank();
-
-      AICocktailHeroSection({
-        title: '今晚想喝点什么？',
-        description: '写下口味、场景或心情即可。',
-        inputText: this.inputText,
-        isLoading: this.isLoading,
-        promptSamples: this.quickPromptSamples,
-        onInputChange: (value: string) => {
-          this.updateInputText(value);
-        },
-        onSubmit: () => {
-          void this.sendMessage();
-        },
-        onSelectSample: (sample: string) => {
-          this.applyPromptSample(sample);
-        }
-      });
-
-      Blank();
+      Column() {
+        AICocktailHeroSection({
+          title: '今晚想喝点什么？',
+          description: '写下口味、场景或心情即可。',
+          inputText: this.inputText,
+          isLoading: this.isLoading,
+          promptSamples: this.quickPromptSamples,
+          onInputChange: (value: string) => {
+            this.updateInputText(value);
+          },
+          onSubmit: () => {
+            void this.sendMessage();
+          },
+          onSelectSample: (sample: string) => {
+            this.applyPromptSample(sample);
+          }
+        });
+      }
+      .width('100%')
+      .layoutWeight(1)
+      .justifyContent(FlexAlign.Center)
+      .padding({ left: 18, right: 18, top: 20, bottom: 20 })
+      .backgroundColor(UiTokens.surfaceWarm)
+      .borderRadius(28)
+      .border({ width: 1, color: UiTokens.borderWarm })
+      .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
     }
     .width('100%')
-    .layoutWeight(1)
-    .justifyContent(FlexAlign.Center);
+    .layoutWeight(1);
   }
 
   @Builder
   private buildResultLayout() {
-    Column({ space: 14 }) {
+    Column() {
       AICocktailResultsSection({
         prompt: this.getLatestUserPrompt(),
         isLoading: this.isLoading,
@@ -473,8 +448,6 @@ export struct AICocktailPage {
         }
       })
         .layoutWeight(1);
-
-      this.buildResultActionBar();
     }
     .width('100%')
     .layoutWeight(1);
@@ -547,7 +520,7 @@ export struct AICocktailPage {
   }
 
   build() {
-    Stack() {
+    Stack({ alignContent: Alignment.TopStart }) {
       Column()
         .width('100%')
         .height('100%')
@@ -572,7 +545,7 @@ export struct AICocktailPage {
       }
       .width('100%')
       .height('100%')
-      .padding({ left: 18, right: 18, top: 20, bottom: 18 })
+      .padding({ left: 10, right: 10, top: 20, bottom: 10 })
       .backgroundColor(UiTokens.pageBackground);
 
       if (this.isShowRefineSheet) {

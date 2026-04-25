@@ -84,7 +84,7 @@ struct PhotoPage {
       }
       .columnsTemplate('1fr 1fr')
       .columnsGap(4)
-      .rowsGap(4)
+      .rowsGap(4);
 
       // if(this.isShowPhotoCom){
       //   PhotoCom({
@@ -134,12 +134,12 @@ struct PhotoCom {
           GridItem(){
             Stack(){
               Image(item.goods_img)
-                .aspectRatio(1)//设置组建的宽高比
+                .aspectRatio(1)//设置组建的宽高比;
               if(this.selectList.some(obj=> obj.id == item.id)) {
                 Image($r('app.media.select'))
                   .width(60)
                   .width(60)
-                  .fillColor(Color.Red)
+                  .fillColor(Color.Red);
               }
             }
             .onClick(()=>{
@@ -150,7 +150,7 @@ struct PhotoCom {
         })
       }
       .columnsTemplate('1fr 1fr')
-      .layoutWeight(1)
+      .layoutWeight(1);
 
       Row() {
         Button('取消')
@@ -166,13 +166,13 @@ struct PhotoCom {
       }
       .width('100%')
       .height(60)
-      .justifyContent(FlexAlign.SpaceAround)
+      .justifyContent(FlexAlign.SpaceAround);
     }
     //.position({x:0,y:0})
     .width('100%')
     .height('100%')
     .backgroundColor(Color.White)
-    .justifyContent(FlexAlign.SpaceBetween)
+    .justifyContent(FlexAlign.SpaceBetween);
 
   }
 
@@ -188,11 +188,11 @@ struct PreviewDilog {
       Swiper(){
         ForEach(this.url,(item : GoodItem)=>{
           Image(item.goods_img)
-            .width('100%')
+            .width('100%');
         })
       }
       .loop(true)
-      .index($$this.selectIndex)
+      .index($$this.selectIndex);
     }
     .width('100%')
     .height('100%')

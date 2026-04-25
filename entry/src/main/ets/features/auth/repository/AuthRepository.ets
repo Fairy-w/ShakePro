@@ -12,12 +12,12 @@ class AuthRepository {
   async register(data: RegisterRequest): Promise<UserInfo> {
     hilog.info(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'register called username=%{public}s nickname=%{public}s', data.username, data.nickname ?? '');
     const response = await authApi.register(data);
-    return this.unwrapResponse<UserInfo>(response, '??????');
+    return this.unwrapResponse<UserInfo>(response, '注册失败，请稍后重试');
   }
   async login(data: LoginRequest): Promise<LoginResponse> {
     hilog.info(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'login called username=%{public}s', data.username);
     const response = await authApi.login(data);
-    const loginResult = this.unwrapResponse<LoginResponse>(response, '??????');
+    const loginResult = this.unwrapResponse<LoginResponse>(response, '登录失败，请稍后重试');
     hilog.info(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'login success username=%{public}s tokenType=%{public}s expireSeconds=%{public}s', data.username, loginResult.tokenType, String(loginResult.expireSeconds));
     await sessionStore.saveSession({
       accessToken: loginResult.token,
@@ -29,7 +29,7 @@ class AuthRepository {
   }
   async getCurrentUser(): Promise<UserInfo> {
     const response = await authApi.getMe();
-    const userInfo = this.unwrapResponse<UserInfo>(response, '???????????????');
+    const userInfo = this.unwrapResponse<UserInfo>(response, '获取用户信息失败，请重新登录');
     await sessionStore.setUserProfile(JSON.stringify(userInfo));
     return userInfo;
   }

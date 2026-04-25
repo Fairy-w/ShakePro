@@ -1,8 +1,14 @@
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
+import { UiTokens } from '../../../common/constants/UiTokens';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import { FilterTab, MaterialDraft, SelectableMaterial } from '../model/BartendingStationMockData';
-import { saveMaterialDraft } from '../model/MaterialStationStore';
+import {
+  notifyRecordedMaterialsChanged,
+  saveMaterialDraft,
+  setRecordedMaterialDrafts
+} from '../model/MaterialStationStore';
 import { stationMaterialRepository } from '../repository/StationMaterialRepository';
 import { sessionStore } from '../../../common/storage/SessionStore';
 
@@ -164,12 +170,13 @@ export struct MaterialLibraryPage {
       }
 
       this.libraryItems = items;
+      setRecordedMaterialDrafts(userMaterials);
       this.applyOwnedMaterials(userMaterials);
     } catch (error) {
       const errorObject = error as Record<string, Object>;
       const message = errorObject['message'];
       promptAction.showToast({
-        message: typeof message === 'string' && message.trim().length > 0 ? message : '加载材料库失败，请稍后再试'
+        message: toUserFacingMessage(typeof message === 'string' ? message : undefined, '加载材料库失败，请稍后再试')
       });
     } finally {
       this.loading = false;
@@ -291,21 +298,16 @@ export struct MaterialLibraryPage {
     this.requestBusy = true;
     try {
       await stationMaterialRepository.deleteUserMaterial(barcode);
-      this.ownedMaterialKeys = this.ownedMaterialKeys.filter((key: string): boolean => key !== materialKey);
-      this.selectedMaterialIds = this.selectedMaterialIds.filter((materialId: string): boolean => materialId !== item.id);
-      const nextBarcodeMap: Record<string, string> = {};
-      Object.keys(this.ownedBarcodeMap).forEach((key: string) => {
-        if (key !== materialKey) {
-          nextBarcodeMap[key] = this.ownedBarcodeMap[key];
-        }
-      });
-      this.ownedBarcodeMap = nextBarcodeMap;
+      const latestUserMaterials = await stationMaterialRepository.getUserMaterials();
+      setRecordedMaterialDrafts(latestUserMaterials);
+      notifyRecordedMaterialsChanged();
+      this.applyOwnedMaterials(latestUserMaterials);
       promptAction.showToast({ message: item.name + ' 已移除' });
     } catch (error) {
       const errorObject = error as Record<string, Object>;
       const message = errorObject['message'];
       promptAction.showToast({
-        message: typeof message === 'string' && message.trim().length > 0 ? message : '移除失败，请稍后再试'
+        message: toUserFacingMessage(typeof message === 'string' ? message : undefined, '移除失败，请稍后再试')
       });
     } finally {
       this.requestBusy = false;
@@ -336,7 +338,7 @@ export struct MaterialLibraryPage {
       const errorObject = error as Record<string, Object>;
       const message = errorObject['message'];
       promptAction.showToast({
-        message: typeof message === 'string' && message.trim().length > 0 ? message : '添加失败，请稍后再试'
+        message: toUserFacingMessage(typeof message === 'string' ? message : undefined, '添加失败，请稍后再试')
       });
     } finally {
       this.requestBusy = false;
@@ -351,14 +353,14 @@ export struct MaterialLibraryPage {
           Text('<')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
+            .fontColor(UiTokens.textPrimary);
         }
         .width(42)
         .height(42)
         .justifyContent(FlexAlign.Center)
-        .backgroundColor('#FFFFFF')
+        .backgroundColor(UiTokens.surfacePrimary)
         .borderRadius(16)
-        .border({ width: 1, color: '#D7E6ED' })
+        .border({ width: 1, color: UiTokens.borderPrimary })
         .onClick(() => {
           router.back();
         });
@@ -367,21 +369,21 @@ export struct MaterialLibraryPage {
           .layoutWeight(1)
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#16303E')
+          .fontColor(UiTokens.textPrimary)
           .margin({ left: 12 });
 
         Row() {
           Text('⌕')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
+            .fontColor(UiTokens.textPrimary);
         }
         .width(42)
         .height(42)
         .justifyContent(FlexAlign.Center)
-        .backgroundColor('#FFFFFF')
+        .backgroundColor(UiTokens.surfacePrimary)
         .borderRadius(16)
-        .border({ width: 1, color: '#D7E6ED' })
+        .border({ width: 1, color: UiTokens.borderPrimary })
         .onClick(() => {
           this.showSearchInput = !this.showSearchInput;
           if (!this.showSearchInput) {
@@ -397,14 +399,14 @@ export struct MaterialLibraryPage {
           Text('查')
             .fontSize(14)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#6A8EA0');
+            .fontColor(UiTokens.textAccent);
 
           TextInput({ placeholder: '搜索材料', text: this.keyword })
             .layoutWeight(1)
             .height(44)
             .backgroundColor(Color.Transparent)
             .fontSize(14)
-            .placeholderColor('#8BA0AC')
+            .placeholderColor(UiTokens.textTertiary)
             .onChange((value: string) => {
               this.keyword = value;
             });
@@ -412,9 +414,9 @@ export struct MaterialLibraryPage {
         .width('100%')
         .height(50)
         .padding({ left: 14, right: 14 })
-        .backgroundColor('#FFFFFF')
+        .backgroundColor(UiTokens.surfacePrimary)
         .borderRadius(16)
-        .border({ width: 1, color: '#D7E6ED' });
+        .border({ width: 1, color: UiTokens.borderPrimary });
       }
     }
     .width('100%');
@@ -429,11 +431,14 @@ export struct MaterialLibraryPage {
             Text(item.title)
               .fontSize(13)
               .fontWeight(item.id === this.activeCategoryId ? FontWeight.Bold : FontWeight.Medium)
-              .fontColor(item.id === this.activeCategoryId ? '#173240' : '#6E818D')
+              .fontColor(item.id === this.activeCategoryId ? UiTokens.textPrimary : UiTokens.textSecondary)
               .padding({ left: 14, right: 14, top: 9, bottom: 9 })
-              .backgroundColor(item.id === this.activeCategoryId ? '#DDF5F1' : '#FFFFFF')
+              .backgroundColor(item.id === this.activeCategoryId ? UiTokens.pageAccentMint : UiTokens.surfacePrimary)
               .borderRadius(16)
-              .border({ width: 1, color: item.id === this.activeCategoryId ? '#BFE7E6' : '#D7E6ED' })
+              .border({
+                width: 1,
+                color: item.id === this.activeCategoryId ? UiTokens.borderStrong : UiTokens.borderPrimary
+              })
               .onClick(() => {
                 this.activeCategoryId = item.id;
               });
@@ -448,8 +453,8 @@ export struct MaterialLibraryPage {
         .height(36)
         .fontSize(12)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#245C82')
-        .backgroundColor('#E8F5FB')
+        .fontColor(UiTokens.primary)
+        .backgroundColor(UiTokens.primarySoft)
         .onClick(() => {
           this.showOwnershipFilterSheet = true;
         });
@@ -463,9 +468,13 @@ export struct MaterialLibraryPage {
     Text(this.isOwned(item) ? '✔ 已添加' : (this.isSelectedMaterial(item.id) ? '✔ 已选中' : '○ 未添加'))
       .fontSize(11)
       .fontWeight(FontWeight.Medium)
-      .fontColor(this.isOwned(item) ? '#2B6C63' : (this.isSelectedMaterial(item.id) ? '#245C82' : '#738590'))
+      .fontColor(this.isOwned(item)
+        ? UiTokens.success
+        : (this.isSelectedMaterial(item.id) ? UiTokens.primary : UiTokens.textSecondary))
       .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-      .backgroundColor(this.isOwned(item) ? '#EEF6F2' : (this.isSelectedMaterial(item.id) ? '#E8F5FB' : '#FFFFFFCC'))
+      .backgroundColor(this.isOwned(item)
+        ? UiTokens.successSoft
+        : (this.isSelectedMaterial(item.id) ? UiTokens.primarySoft : UiTokens.surfaceOverlay))
       .borderRadius(12);
   }
 
@@ -488,17 +497,31 @@ export struct MaterialLibraryPage {
   @Builder
   private buildMaterialImage(item: SelectableMaterial) {
     if (this.resolveMaterialCardImageUrl(item).length > 0) {
-      Image(this.resolveMaterialCardImageUrl(item))
-        .width('100%')
-        .height(112)
-        .borderRadius(14)
-        .objectFit(ImageFit.Cover);
+      Stack({ alignContent: Alignment.Center }) {
+        Column()
+          .width('100%')
+          .height(148)
+          .backgroundColor(UiTokens.surfaceSecondary)
+          .borderRadius(16);
+
+        Image(this.resolveMaterialCardImageUrl(item))
+          .width('100%')
+          .height('100%')
+          .borderRadius(16)
+          .objectFit(ImageFit.Contain)
+          .padding(8);
+      }
+      .width('100%')
+      .height(148)
+      .backgroundColor(UiTokens.surfaceSecondary)
+      .borderRadius(16)
+      .clip(true);
     } else {
       Column()
         .width('100%')
-        .height(112)
-        .backgroundColor('#E9F2F6')
-        .borderRadius(14);
+        .height(148)
+        .backgroundColor(UiTokens.surfaceSecondary)
+        .borderRadius(16);
     }
   }
 
@@ -511,14 +534,14 @@ export struct MaterialLibraryPage {
         Text(item.name)
           .fontSize(14)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#173240')
+          .fontColor(UiTokens.textPrimary)
           .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis });
 
         if (typeof item.description === 'string' && item.description.trim().length > 0) {
           Text(item.description)
             .fontSize(11)
-            .fontColor('#738590')
+            .fontColor(UiTokens.textSecondary)
             .maxLines(2)
             .textOverflow({ overflow: TextOverflow.Ellipsis });
         }
@@ -526,12 +549,12 @@ export struct MaterialLibraryPage {
         Row() {
           Text(item.categoryName)
             .fontSize(11)
-            .fontColor('#5F7684');
+            .fontColor(UiTokens.textSecondary);
           Blank();
           if (this.isOwned(item)) {
             Text('长按可移除')
               .fontSize(10)
-              .fontColor('#9AAAB3');
+              .fontColor(UiTokens.textTertiary);
           }
         }
         .width('100%');
@@ -543,13 +566,13 @@ export struct MaterialLibraryPage {
       this.buildStatusChip(item);
     }
     .width('100%')
-    .height(224)
-    .padding(10)
-    .backgroundColor('#FFFFFF')
+    .height(260)
+    .padding(12)
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(18)
     .border({
       width: this.isSelectedMaterial(item.id) ? 2 : 1,
-      color: this.isSelectedMaterial(item.id) ? '#1B596E' : '#D7E6ED'
+      color: this.isSelectedMaterial(item.id) ? UiTokens.primary : UiTokens.borderPrimary
     })
     .onTouch((event: TouchEvent) => {
       this.handleMaterialTouch(item, event);
@@ -568,17 +591,17 @@ export struct MaterialLibraryPage {
       Text('暂无匹配材料')
         .fontSize(16)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#173240');
+        .fontColor(UiTokens.textPrimary);
 
       Text('可以调整分类、筛选条件或搜索关键字')
         .fontSize(12)
-        .fontColor('#738590');
+        .fontColor(UiTokens.textSecondary);
     }
     .width('100%')
     .padding({ top: 32, bottom: 32 })
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(20)
-    .border({ width: 1, color: '#D7E6ED' })
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .alignItems(HorizontalAlign.Center);
   }
 
@@ -589,17 +612,17 @@ export struct MaterialLibraryPage {
         LoadingProgress()
           .width(24)
           .height(24)
-          .color('#1B596E');
+          .color(UiTokens.primary);
         Text('正在加载材料库...')
           .fontSize(12)
-          .fontColor('#72838F');
+          .fontColor(UiTokens.textSecondary);
       }
       .width('100%')
       .height(180)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(UiTokens.surfacePrimary)
       .borderRadius(20)
-      .border({ width: 1, color: '#D7E6ED' });
+      .border({ width: 1, color: UiTokens.borderPrimary });
     } else if (this.getDisplayedMaterials().length === 0) {
       this.buildEmptyState();
     } else {
@@ -620,31 +643,37 @@ export struct MaterialLibraryPage {
   @Builder
   private buildBottomActionBar() {
     if (this.selectedMaterialIds.length > 0) {
-      Row({ space: 10 }) {
-        Text('已选 (' + this.selectedMaterialIds.length.toString() + ')')
-          .fontSize(13)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#173240');
+      Row({ space: 12 }) {
+        Column({ space: 2 }) {
+          Text('已选 ' + this.selectedMaterialIds.length.toString() + ' 项')
+            .fontSize(15)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(UiTokens.textPrimary);
 
-        Blank();
+          Text('加入后会立刻同步到我的材料库')
+            .fontSize(11)
+            .fontColor(UiTokens.textSecondary);
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start);
 
         Button(this.requestBusy ? '加入中...' : '加入我的材料库', { type: ButtonType.Capsule })
-          .height(42)
-          .fontSize(14)
+          .height(44)
+          .fontSize(13)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
-          .backgroundColor('#1B596E')
+          .fontColor(UiTokens.textInverse)
+          .backgroundColor(UiTokens.primary)
           .enabled(!this.requestBusy)
           .onClick(() => {
             void this.addSelectedMaterials();
           });
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 12, bottom: 14 })
-      .backgroundColor('#FFFFFF')
-      .borderRadius(18)
-      .border({ width: 1, color: '#D7E6ED' })
-      .margin({ left: 16, right: 16, bottom: 96 });
+      .padding({ left: 16, right: 16, top: 14, bottom: 20 })
+      .backgroundColor(UiTokens.surfacePrimary)
+      .borderRadius({ topLeft: 22, topRight: 22 })
+      .border({ width: 1, color: UiTokens.borderPrimary })
+      .shadow({ radius: 18, color: UiTokens.shadowMedium, offsetX: 0, offsetY: -6 });
     }
   }
 
@@ -654,12 +683,12 @@ export struct MaterialLibraryPage {
       Text(this.ownershipFilter === value ? '✔' : '○')
         .fontSize(14)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.ownershipFilter === value ? '#1B596E' : '#6E818D');
+        .fontColor(this.ownershipFilter === value ? UiTokens.primary : UiTokens.textSecondary);
 
       Text(label)
         .fontSize(14)
         .fontWeight(this.ownershipFilter === value ? FontWeight.Bold : FontWeight.Medium)
-        .fontColor('#173240');
+        .fontColor(UiTokens.textPrimary);
     }
     .width('100%')
     .padding({ left: 4, right: 4, top: 8, bottom: 8 })
@@ -675,7 +704,7 @@ export struct MaterialLibraryPage {
       Text('筛选')
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor('#173240');
+        .fontColor(UiTokens.textPrimary);
 
       this.buildOwnershipFilterOption('全部', OwnershipFilterType.ALL);
       this.buildOwnershipFilterOption('已拥有', OwnershipFilterType.OWNED);
@@ -686,15 +715,15 @@ export struct MaterialLibraryPage {
         .height(40)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#5A7180')
-        .backgroundColor('#EEF5F8')
+        .fontColor(UiTokens.textSecondary)
+        .backgroundColor(UiTokens.pageGradientMiddle)
         .onClick(() => {
           this.showOwnershipFilterSheet = false;
         });
     }
     .width('100%')
     .padding({ left: 16, right: 16, top: 18, bottom: 24 })
-    .backgroundColor('#F4F8FB')
+    .backgroundColor(UiTokens.pageBackground)
     .borderRadius({ topLeft: 24, topRight: 24 });
   }
 
@@ -707,20 +736,31 @@ export struct MaterialLibraryPage {
           this.buildMaterialGrid();
         }
         .width('100%')
-        .padding({ left: 16, right: 16, top: 18, bottom: 228 });
+        .padding({
+          left: 16,
+          right: 16,
+          top: 18,
+          bottom: this.selectedMaterialIds.length > 0 ? 132 : 36
+        });
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F4F8FB')
+      .align(Alignment.TopStart)
+      .backgroundColor(UiTokens.pageBackground)
       .scrollBar(BarState.Off);
 
       this.buildBottomActionBar();
     }
     .width('100%')
     .height('100%')
-    .backgroundColor('#F4F8FB')
-    .bindSheet(this.showOwnershipFilterSheet, this.buildOwnershipFilterSheet, {
-      showClose: false
+    .backgroundColor(UiTokens.pageBackground)
+    .bindSheet($$this.showOwnershipFilterSheet, this.buildOwnershipFilterSheet, {
+      showClose: false,
+      height: SheetSize.FIT_CONTENT,
+      backgroundColor: UiTokens.pageBackground,
+      onDisappear: () => {
+        this.showOwnershipFilterSheet = false;
+      }
     });
   }
 }

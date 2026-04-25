@@ -1,6 +1,7 @@
 export const API_BASE_URL: string = 'http://172.20.10.3:8080';
 // 手机热点： 172.20.10.3
 // CDU：10.7.123.71
+// 唱吧： 172.25.12.162
 export const API_TIMEOUT_MS: number = 10000;
 export const API_FALLBACK_TIMEOUT_MS: number = 2500;
 export const API_MAX_RETRY_COUNT: number = 0;
@@ -32,6 +33,10 @@ export const MATERIAL_CATEGORIES_PATH: string = '/api/materials/categories';
 export const USER_MATERIALS_PATH: string = '/api/user-materials';
 export const USER_MATERIALS_MANUAL_PATH: string = '/api/user-materials/manual';
 export const USER_MATERIALS_MANUAL_BATCH_PATH: string = '/api/user-materials/manual/batch';
+export const COMMUNITY_POSTS_PATH: string = '/api/community/posts';
+export const COMMUNITY_MY_POSTS_PATH: string = '/api/community/my/posts';
+export const COMMUNITY_UPLOAD_IMAGE_PATH: string = '/api/community/upload/image';
+export const RECOMMEND_COCKTAILS_PATH: string = '/api/recommend/cocktails';
 
 export function isAbsoluteUrl(path: string): boolean {
   return path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//');

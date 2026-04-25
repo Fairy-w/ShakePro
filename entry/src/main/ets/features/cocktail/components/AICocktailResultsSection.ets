@@ -110,7 +110,7 @@ export struct AICocktailResultsSection {
 
   @Builder
   private buildLoadingBody() {
-    Column({ space: 14 }) {
+    Column({ space: 12 }) {
       Row({ space: 10 }) {
         LoadingProgress()
           .width(16)
@@ -124,7 +124,7 @@ export struct AICocktailResultsSection {
       }
       .width('100%');
 
-      Column({ space: 10 }) {
+      Column({ space: 8 }) {
         Column()
           .width('62%')
           .height(30)
@@ -146,7 +146,7 @@ export struct AICocktailResultsSection {
       .width('100%')
       .alignItems(HorizontalAlign.Start);
 
-      Row({ space: 8 }) {
+      Row({ space: 10 }) {
         Column()
           .width(96)
           .height(30)
@@ -159,7 +159,8 @@ export struct AICocktailResultsSection {
           .borderRadius(15)
           .backgroundColor(UiTokens.primarySoft);
       }
-      .width('100%');
+      .width('100%')
+      .alignItems(VerticalAlign.Center);
 
       Column({ space: 10 }) {
         Column()
@@ -167,33 +168,62 @@ export struct AICocktailResultsSection {
           .height(18)
           .borderRadius(9)
           .backgroundColor(UiTokens.accentWarmSoft);
+      }
+      .width('100%')
+      .alignItems(HorizontalAlign.Start);
 
-        ForEach(this.loadingCardKeys, (_: string, lineIndex: number) => {
-          Column()
-            .width('100%')
-            .height(lineIndex === 0 ? 44 : 52)
-            .borderRadius(16)
-            .backgroundColor(UiTokens.surfacePrimary)
-            .border({ width: 1, color: UiTokens.borderPrimary });
+      Column({ space: 10 }) {
+        ForEach(this.loadingCardKeys, (item: string) => {
+          Column({ space: 8 }) {
+            Column()
+              .width('52%')
+              .height(14)
+              .borderRadius(7)
+              .backgroundColor(UiTokens.surfaceSecondary);
+
+            Column()
+              .width('100%')
+              .height(12)
+              .borderRadius(6)
+              .backgroundColor(UiTokens.surfaceSecondary);
+
+            Column()
+              .width('84%')
+              .height(12)
+              .borderRadius(6)
+              .backgroundColor(UiTokens.surfaceSecondary);
+          }
+          .width('100%')
+          .layoutWeight(1)
+          .padding({ left: 12, right: 12, top: 12, bottom: 12 })
+          .backgroundColor(UiTokens.surfacePrimary)
+          .borderRadius(16)
+          .border({ width: 1, color: UiTokens.borderPrimary });
         }, (item: string) => `loading-step-${item}`);
       }
       .width('100%')
+      .layoutWeight(1)
       .alignItems(HorizontalAlign.Start);
     }
     .width('100%')
     .height('100%')
-    .padding({ left: 18, right: 18, top: 16, bottom: 28 });
+    .padding({ left: 14, right: 14, top: 10, bottom: 10 });
   }
 
   @Builder
-  private buildMaterialItem(material: string) {
+  private buildMaterialItem(material: string, index: number) {
     Row({ space: 10 }) {
-      Column()
-        .width(6)
-        .height(6)
-        .borderRadius(3)
-        .backgroundColor(UiTokens.aiPrimary)
-        .margin({ top: 7 });
+      Row() {
+        Text(`${index + 1}`)
+          .fontSize(12)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(UiTokens.aiPrimary);
+      }
+      .width(28)
+      .height(28)
+      .justifyContent(FlexAlign.Center)
+      .backgroundColor(UiTokens.aiSoft)
+      .borderRadius(14);
 
       Text(material)
         .layoutWeight(1)
@@ -202,6 +232,10 @@ export struct AICocktailResultsSection {
         .lineHeight(20);
     }
     .width('100%')
+    .padding({ left: 12, right: 12, top: 12, bottom: 12 })
+    .backgroundColor(UiTokens.surfacePrimary)
+    .borderRadius(16)
+    .border({ width: 1, color: UiTokens.borderPrimary })
     .alignItems(VerticalAlign.Top);
   }
 
@@ -278,9 +312,9 @@ export struct AICocktailResultsSection {
             .letterSpacing(1.2);
 
           Column({ space: 10 }) {
-            ForEach(recipe.materials, (material: string) => {
-              this.buildMaterialItem(material);
-            }, (material: string) => `${recipe.name}-${material}`);
+            ForEach(recipe.materials, (material: string, materialIndex: number) => {
+              this.buildMaterialItem(material, materialIndex);
+            }, (material: string, materialIndex: number) => `${recipe.name}-${materialIndex}-${material}`);
           }
           .width('100%')
           .alignItems(HorizontalAlign.Start);
@@ -306,7 +340,7 @@ export struct AICocktailResultsSection {
         .alignItems(HorizontalAlign.Start);
       }
       .width('100%')
-      .padding({ left: 18, right: 18, top: 16, bottom: 18 });
+      .padding({ left: 18, right: 18, top: 8, bottom: 18 });
     }
     .width('100%')
     .height('100%')

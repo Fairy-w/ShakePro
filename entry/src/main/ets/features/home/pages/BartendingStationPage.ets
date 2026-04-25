@@ -7,6 +7,7 @@ import {
   MaterialPreviewTagStyle,
   resolveMaterialPreviewImageUrl
 } from '../../../common/components/MaterialImagePreviewOverlay';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import { MaterialRecord } from '../../station/model/BartendingStationMockData';
 import {
   getRecordedMaterials,
@@ -30,6 +31,12 @@ const INVENTORY_TABS: InventoryTab[] = [
 
 @Component
 export struct BartendingStationPage {
+  @Prop floatingActionBottomInset: number = 0;
+  @Prop contentBottomInset: number = 0;
+  @StorageLink('station.recordedMaterialsRefreshSignal')
+  @Watch('syncRecordedMaterialsFromStore')
+  private recordedMaterialsRefreshSignal: number = 0;
+
   @State private activeTabId: string = 'all';
   @State private keyword: string = '';
   @State private showSearchBar: boolean = false;
@@ -44,6 +51,21 @@ export struct BartendingStationPage {
 
   aboutToAppear(): void {
     void this.refreshRecordedMaterials();
+  }
+
+  private syncRecordedMaterialsFromStore(): void {
+    if (this.loading) {
+      return;
+    }
+    this.recordedMaterials = getRecordedMaterials();
+  }
+
+  private resolveFloatingActionBottomInset(): number {
+    return this.floatingActionBottomInset > 0 ? this.floatingActionBottomInset : 16;
+  }
+
+  private resolveContentBottomInset(): number {
+    return this.contentBottomInset > 0 ? this.contentBottomInset : 120;
   }
 
   private getHostContext(): common.BaseContext {
@@ -73,7 +95,7 @@ export struct BartendingStationPage {
       const errorObject = error as Record<string, Object>;
       const message = errorObject['message'];
       if (typeof message === 'string' && message.trim().length > 0) {
-        promptAction.showToast({ message });
+        promptAction.showToast({ message: toUserFacingMessage(message, '暂时无法刷新材料列表，请稍后再试') });
       }
       this.recordedMaterials = getRecordedMaterials();
     } finally {
@@ -122,10 +144,7 @@ export struct BartendingStationPage {
   private resolveErrorMessage(error: Object, fallbackMessage: string): string {
     const errorObject = error as Record<string, Object>;
     const message = errorObject['message'];
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-    return fallbackMessage;
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, fallbackMessage);
   }
 
   private resolveAddDateText(addedAt?: string): string {
@@ -161,17 +180,31 @@ export struct BartendingStationPage {
   @Builder
   private buildMaterialImage(item: MaterialRecord) {
     if (this.resolveMaterialCardImageUrl(item).length > 0) {
-      Image(this.resolveMaterialCardImageUrl(item))
-        .width('100%')
-        .height(98)
-        .objectFit(ImageFit.Cover)
-        .borderRadius(14);
+      Stack({ alignContent: Alignment.Center }) {
+        Column()
+          .width('100%')
+          .height(124)
+          .backgroundColor(UiTokens.surfaceSecondary)
+          .borderRadius(16);
+
+        Image(this.resolveMaterialCardImageUrl(item))
+          .width('100%')
+          .height('100%')
+          .objectFit(ImageFit.Contain)
+          .borderRadius(16)
+          .padding(8);
+      }
+      .width('100%')
+      .height(124)
+      .backgroundColor(UiTokens.surfaceSecondary)
+      .borderRadius(16)
+      .clip(true);
     } else {
       Column()
         .width('100%')
-        .height(98)
+        .height(124)
         .backgroundColor(UiTokens.surfaceSecondary)
-        .borderRadius(14);
+        .borderRadius(16);
     }
   }
 
@@ -262,7 +295,7 @@ export struct BartendingStationPage {
       removeRecordedMaterialById(item.id);
       this.recordedMaterials = getRecordedMaterials();
       this.pendingDeleteIds = this.pendingDeleteIds.filter((materialId: string): boolean => materialId !== item.id);
-      promptAction.showToast({ message: item.name + ' 已移出材料库' });
+      promptAction.showToast({ message: item.name + ' 已移出调酒台' });
     } catch (error) {
       promptAction.showToast({ message: this.resolveErrorMessage(error as Object, '移出材料失败，请稍后再试') });
     } finally {
@@ -320,7 +353,7 @@ export struct BartendingStationPage {
     Column({ space: 12 }) {
       Row() {
         Column({ space: 4 }) {
-          Text('我的材料库（' + this.recordedMaterials.length.toString() + '）')
+          Text('我的调酒台（' + this.recordedMaterials.length.toString() + '）')
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
             .fontColor(UiTokens.textPrimary);
@@ -557,7 +590,7 @@ export struct BartendingStationPage {
       this.buildDeleteTrigger(item);
     }
     .width('100%')
-    .height(220)
+    .height(246)
     .padding(12)
     .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(18)
@@ -687,24 +720,20 @@ export struct BartendingStationPage {
             .fontWeight(FontWeight.Bold)
             .fontColor(UiTokens.surfacePrimary);
         }
-        .width(78)
-        .height(78)
+        .width(50)
+        .height(50)
         .justifyContent(FlexAlign.Center)
         .backgroundColor(UiTokens.primary)
         .borderRadius(39)
-        .shadow({ radius: 20, color: UiTokens.shadowMedium, offsetX: 0, offsetY: 8 });
+        .shadow({ radius: 20, color: UiTokens.shadowMedium, offsetX: 0, offsetY: 5 });
 
-        Text('添加材料')
-          .fontSize(12)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(UiTokens.textPrimary);
       }
       .onClick(() => {
         this.showAddSheet = true;
       });
     }
     .width('100%')
-    .padding({ left: 16, right: 16, bottom: 110 })
+    .padding({ left: 16, right: 16, bottom: this.resolveFloatingActionBottomInset() })
     .alignItems(HorizontalAlign.Center);
   }
 
@@ -762,7 +791,7 @@ export struct BartendingStationPage {
         .lineHeight(18)
         .width('100%');
 
-      this.buildAddEntryAction('扫码添加', '调起相机后自动识别条码，一键存入材料库。', UiTokens.primary, UiTokens.pageAccentMint, () => {
+      this.buildAddEntryAction('扫码添加', '调起相机后自动识别条码，一键存入调酒台。', UiTokens.primary, UiTokens.pageAccentMint, () => {
         this.showAddSheet = false;
         router.pushUrl({ url: 'features/station/pages/MaterialScannerPage' }, 3000);
       });
@@ -798,13 +827,13 @@ export struct BartendingStationPage {
           this.buildInventoryGrid();
         }
         .width('100%')
-        .padding({ left: 16, right: 16, top: 18, bottom: 228 });
+        .padding({ left: 16, right: 16, top: 18, bottom: this.resolveContentBottomInset() });
       }
       .width('100%')
       .height('100%')
+      .align(Alignment.TopStart)
       .backgroundColor(UiTokens.pageBackground)
       .scrollBar(BarState.Off);
-
       this.buildFloatingActionBar();
 
       if (this.materialPreviewVisible) {
@@ -822,8 +851,13 @@ export struct BartendingStationPage {
     .width('100%')
     .height('100%')
     .backgroundColor(UiTokens.pageBackground)
-    .bindSheet(this.showAddSheet, this.buildAddSheet, {
-      showClose: false
+    .bindSheet($$this.showAddSheet, this.buildAddSheet, {
+      showClose: false,
+      height: SheetSize.FIT_CONTENT,
+      backgroundColor: UiTokens.pageBackground,
+      onDisappear: () => {
+        this.showAddSheet = false;
+      }
     });
   }
 }

@@ -1,52 +1,52 @@
 export class UiTokens {
-  static readonly brandStrong: string = '#17303D';
-  static readonly brandHover: string = '#214659';
-  static readonly primary: string = '#2E7C8F';
-  static readonly primarySoft: string = '#E3F1F4';
-  static readonly primarySoftAlt: string = '#EEF6F8';
-  static readonly aiPrimary: string = '#4A8F88';
-  static readonly aiPrimaryHover: string = '#3D7B75';
-  static readonly aiSoft: string = '#E1F2EF';
-  static readonly aiSurface: string = '#F3FAF8';
-  static readonly accentWarm: string = '#C38A2C';
-  static readonly accentWarmSoft: string = '#F7ECD8';
+  static readonly brandStrong: string = '#241F1C';
+  static readonly brandHover: string = '#3B332E';
+  static readonly primary: string = '#6F635D';
+  static readonly primarySoft: string = '#E7DED7';
+  static readonly primarySoftAlt: string = '#EFE8E2';
+  static readonly aiPrimary: string = '#7F6659';
+  static readonly aiPrimaryHover: string = '#6C564A';
+  static readonly aiSoft: string = '#E9DED8';
+  static readonly aiSurface: string = '#F4EFEB';
+  static readonly accentWarm: string = '#8C6252';
+  static readonly accentWarmSoft: string = '#F2E4DB';
 
-  static readonly pageBackground: string = '#F4F8FA';
-  static readonly pageGradientStart: string = '#F7FBFC';
-  static readonly pageGradientMiddle: string = '#EEF5F8';
-  static readonly pageGradientEnd: string = '#EAF2F5';
-  static readonly pageAccentBlue: string = '#D8EEF4';
-  static readonly pageAccentMint: string = '#DDF5F1';
+  static readonly pageBackground: string = '#F3EEE8';
+  static readonly pageGradientStart: string = '#F8F5F1';
+  static readonly pageGradientMiddle: string = '#F1ECE6';
+  static readonly pageGradientEnd: string = '#E8E1DA';
+  static readonly pageAccentBlue: string = '#DED6CF';
+  static readonly pageAccentMint: string = '#E8E0D8';
 
-  static readonly surfacePrimary: string = '#FFFFFF';
-  static readonly surfaceSecondary: string = '#EEF5F7';
-  static readonly surfaceMuted: string = '#F2F7F8';
-  static readonly surfaceWarm: string = '#FCF7EE';
-  static readonly surfaceWarmAlt: string = '#F8EFE1';
-  static readonly surfaceOverlay: string = '#FFFFFFCC';
+  static readonly surfacePrimary: string = '#FFFCF8';
+  static readonly surfaceSecondary: string = '#F4EEE8';
+  static readonly surfaceMuted: string = '#EFE8E1';
+  static readonly surfaceWarm: string = '#F7F0E8';
+  static readonly surfaceWarmAlt: string = '#F1E6DC';
+  static readonly surfaceOverlay: string = '#FFFCF8E0';
 
-  static readonly borderPrimary: string = '#D7E4E9';
-  static readonly borderSecondary: string = '#E7EFF2';
-  static readonly borderStrong: string = '#C4D7DE';
-  static readonly borderWarm: string = '#EADCC8';
+  static readonly borderPrimary: string = '#DED4CB';
+  static readonly borderSecondary: string = '#E8DFD7';
+  static readonly borderStrong: string = '#CBBFB5';
+  static readonly borderWarm: string = '#DACABD';
 
-  static readonly textPrimary: string = '#17303D';
-  static readonly textSecondary: string = '#607784';
-  static readonly textTertiary: string = '#8AA0AA';
-  static readonly textInverse: string = '#FFFFFF';
-  static readonly textAccent: string = '#1F5E72';
+  static readonly textPrimary: string = '#231E1B';
+  static readonly textSecondary: string = '#6E645D';
+  static readonly textTertiary: string = '#9A8F86';
+  static readonly textInverse: string = '#FFFDFB';
+  static readonly textAccent: string = '#7A6154';
 
-  static readonly success: string = '#22A06B';
-  static readonly successSoft: string = '#E8F6EF';
-  static readonly warning: string = '#C38A2C';
-  static readonly warningSoft: string = '#FCF1DF';
-  static readonly error: string = '#D95C5C';
-  static readonly errorSoft: string = '#FDECEC';
+  static readonly success: string = '#6B7762';
+  static readonly successSoft: string = '#E7ECE1';
+  static readonly warning: string = '#8C6252';
+  static readonly warningSoft: string = '#F4E5DD';
+  static readonly error: string = '#A2645D';
+  static readonly errorSoft: string = '#F6E5E2';
 
-  static readonly shadowSoft: string = '#16303D12';
-  static readonly shadowMedium: string = '#17303D1A';
-  static readonly shadowStrong: string = '#17303D22';
-  static readonly overlayMask: string = '#17303D66';
+  static readonly shadowSoft: string = '#1E171110';
+  static readonly shadowMedium: string = '#1E171118';
+  static readonly shadowStrong: string = '#1E171124';
+  static readonly overlayMask: string = '#241F1C66';
 
   static readonly radiusXs: number = 12;
   static readonly radiusSm: number = 16;
@@ -54,4 +54,12 @@ export class UiTokens {
   static readonly radiusLg: number = 24;
   static readonly radiusXl: number = 28;
   static readonly radiusHero: number = 32;
+
+  static readonly dockHeight: number = 56;
+  static readonly dockRadius: number = 22;
+  static readonly dockHorizontalMargin: number = 14;
+  static readonly dockBottomMargin: number = 8;
+  static readonly dockPageInset: number = 70;
+  static readonly stationFloatingBarInset: number = 80;
+  static readonly stationContentBottomInset: number = 184;
 }

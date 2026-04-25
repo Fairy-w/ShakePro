@@ -26,12 +26,6 @@ export interface CocktailPageQuery {
   size?: number;
 }
 
-export interface CocktailBannerDto {
-  cocktailId: number;
-  imageUrl?: string | null;
-  title?: string | null;
-}
-
 export interface CocktailCategoryDto {
   name: string;
   icon?: string | null;

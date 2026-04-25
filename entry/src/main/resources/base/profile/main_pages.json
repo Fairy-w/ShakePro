@@ -4,12 +4,18 @@
     "features/auth/pages/RegisterPage",
     "features/home/pages/NavigationPage",
     "features/home/pages/HomePage",
+    "features/community/pages/CommunityPage",
+    "features/community/pages/CommunityNoteEditorPage",
+    "features/community/pages/CommunityPostDetailPage",
+    "features/recipe/pages/RecipeLibraryPage",
     "features/recipe/pages/RecipeDetailPage",
     "features/cocktail/pages/AICocktailPage",
     "features/favorite/pages/MyFavoritePage",
     "features/station/pages/MaterialScannerPage",
     "features/station/pages/MaterialLibraryPage",
     "features/cocktail/pages/CocktailPhotoPage",
-    "features/profile/pages/ProfilePage"
+    "features/profile/pages/ProfilePage",
+    "features/profile/pages/ProfileSettingsPage",
+    "features/profile/pages/ProfilePostsPage"
   ]
 }

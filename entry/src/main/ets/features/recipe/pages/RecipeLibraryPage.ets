@@ -2,6 +2,7 @@ import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
 import router from '@ohos.router';
 import { UiTokens } from '../../../common/constants/UiTokens';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { cocktailRepository } from '../../cocktail/repository/CocktailRepository';
 import {
@@ -28,9 +29,11 @@ const DEFAULT_RECIPE_CATEGORY: RecipeCategoryItem = {
 };
 
 const COCKTAIL_PAGE_SIZE: number = 40;
-
+@Entry
 @Component
 export struct RecipeLibraryPage {
+  @Prop pageBottomInset: number = 0;
+
   @State private currentCategoryId: string = DEFAULT_RECIPE_CATEGORY.id;
   @State private categoryItems: RecipeCategoryItem[] = [DEFAULT_RECIPE_CATEGORY];
   @State private summaries: CocktailListItemDto[] = [];
@@ -45,6 +48,10 @@ export struct RecipeLibraryPage {
 
   aboutToAppear(): void {
     void this.refreshSummaries();
+  }
+
+  private resolvePageBottomInset(): number {
+    return this.pageBottomInset > 0 ? this.pageBottomInset : 24;
   }
 
   private getHostContext(): common.BaseContext {
@@ -155,12 +162,7 @@ export struct RecipeLibraryPage {
     if (typeof code === 'number' && code === 40100) {
       return '登录已失效，请重新登录后查看配方库';
     }
-
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-
-    return '加载配方库失败，请稍后重试';
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, '加载配方库失败，请稍后重试');
   }
 
   private resolveTraceId(error: Object): string {
@@ -323,36 +325,36 @@ export struct RecipeLibraryPage {
       }
       .width('100%');
 
-      Row({ space: 12 }) {
-        Column()
-          .width(10)
-          .height(58)
-          .borderRadius(8)
-          .linearGradient({
-            direction: GradientDirection.Top,
-            repeating: false,
-            colors: [[UiTokens.primary, 0.0], [UiTokens.aiSoft, 1.0]]
-          });
-
-        Column({ space: 6 }) {
-          Text('先看经典酒谱，再决定下一步')
-            .fontSize(15)
-            .fontWeight(FontWeight.Bold)
-            .fontColor(UiTokens.textPrimary);
-
-          Text('这里更适合找灵感、挑分类和看标准做法，确认方向后再进入详情页继续查看。')
-            .fontSize(12)
-            .fontColor(UiTokens.textSecondary)
-            .lineHeight(18);
-        }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Start);
-      }
-      .width('100%')
-      .padding({ left: 16, right: 16, top: 14, bottom: 14 })
-      .backgroundColor(UiTokens.surfacePrimary)
-      .borderRadius(20)
-      .border({ width: 1, color: UiTokens.borderPrimary });
+      // Row({ space: 12 }) {
+      //   Column()
+      //     .width(10)
+      //     .height(58)
+      //     .borderRadius(8)
+      //     .linearGradient({
+      //       direction: GradientDirection.Top,
+      //       repeating: false,
+      //       colors: [[UiTokens.primary, 0.0], [UiTokens.aiSoft, 1.0]]
+      //     });
+      //
+      //   Column({ space: 6 }) {
+      //     Text('先看经典酒谱，再决定下一步')
+      //       .fontSize(15)
+      //       .fontWeight(FontWeight.Bold)
+      //       .fontColor(UiTokens.textPrimary);
+      //
+      //     Text('这里更适合找灵感、挑分类和看标准做法，确认方向后再进入详情页继续查看。')
+      //       .fontSize(12)
+      //       .fontColor(UiTokens.textSecondary)
+      //       .lineHeight(18);
+      //   }
+      //   .layoutWeight(1)
+      //   .alignItems(HorizontalAlign.Start);
+      // }
+      // .width('100%')
+      // .padding({ left: 16, right: 16, top: 14, bottom: 14 })
+      // .backgroundColor(UiTokens.surfacePrimary)
+      // .borderRadius(20)
+      // .border({ width: 1, color: UiTokens.borderPrimary });
     }
     .width('100%')
     .alignItems(HorizontalAlign.Start);
@@ -428,7 +430,7 @@ export struct RecipeLibraryPage {
         .textAlign(TextAlign.Center);
 
       if (this.traceId.length > 0) {
-        Text(`traceId: ${this.traceId}`)
+        Text(`问题编号：${this.traceId}`)
           .fontSize(11)
           .fontColor(UiTokens.textTertiary)
           .textAlign(TextAlign.Center);
@@ -656,7 +658,7 @@ export struct RecipeLibraryPage {
       }
       .width('100%')
       .height('100%')
-      .padding({ left: 16, right: 16, top: 20, bottom: 110 });
+      .padding({ left: 16, right: 16, top: 20, bottom: this.resolvePageBottomInset() });
     }
     .width('100%')
     .height('100%');

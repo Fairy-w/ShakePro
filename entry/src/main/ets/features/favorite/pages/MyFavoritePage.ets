@@ -8,7 +8,7 @@ import { SystemFavoriteRecipeCard } from '../components/SystemFavoriteRecipeCard
 import { FavoriteAiCocktailItem } from '../model/FavoriteAiCocktailModels';
 import { favoriteRepository } from '../repository/FavoriteRepository';
 import { UiTokens } from '../../../common/constants/UiTokens';
-
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 const SYSTEM_FAVORITE_TAB: string = 'system';
 const AI_FAVORITE_TAB: string = 'ai';
 
@@ -28,10 +28,7 @@ export struct MyFavoritePage {
   @State private removingFavoriteId: number = -1;
   @State private currentCatalogIndex: number = 0;
 
-  private favoriteScroller: Scroller = new Scroller();
   private catalogScroller: Scroller = new Scroller();
-  private isCatalogAutoScrolling: boolean = false;
-  private catalogTargetIndex: number = -1;
 
   aboutToAppear(): void {
     void this.loadFavorites();
@@ -51,10 +48,7 @@ export struct MyFavoritePage {
   private resolveErrorMessage(error: Object, fallbackMessage: string = '加载收藏失败'): string {
     const errorObject = error as Record<string, Object>;
     const message = errorObject['message'];
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-    return fallbackMessage;
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, fallbackMessage);
   }
 
   private async loadFavorites(): Promise<void> {
@@ -71,8 +65,6 @@ export struct MyFavoritePage {
         this.systemFavorites = [];
         this.favorites = [];
         this.currentCatalogIndex = 0;
-        this.isCatalogAutoScrolling = false;
-        this.catalogTargetIndex = -1;
         return;
       }
 
@@ -122,8 +114,6 @@ export struct MyFavoritePage {
       });
       this.favorites = response.list ?? [];
       this.currentCatalogIndex = 0;
-      this.isCatalogAutoScrolling = false;
-      this.catalogTargetIndex = -1;
     } catch (error) {
       this.favorites = [];
       this.aiErrorMessage = this.resolveErrorMessage(error, '加载收藏失败，请稍后再试');
@@ -174,8 +164,6 @@ export struct MyFavoritePage {
       } else if (this.currentCatalogIndex >= this.favorites.length) {
         this.currentCatalogIndex = this.favorites.length - 1;
       }
-      this.isCatalogAutoScrolling = false;
-      this.catalogTargetIndex = -1;
       promptAction.showToast({ message: '已取消收藏' });
     } catch (error) {
       promptAction.showToast({ message: this.resolveErrorMessage(error, '取消收藏失败，请稍后再试') });
@@ -236,11 +224,8 @@ export struct MyFavoritePage {
       offsetY: this.currentCatalogIndex === index ? 8 : 4
     })
     .onClick(() => {
-      this.isCatalogAutoScrolling = true;
-      this.catalogTargetIndex = index;
       this.currentCatalogIndex = index;
       this.scrollCatalogToCenter(index);
-      this.favoriteScroller.scrollToIndex(index, true);
     });
   }
 
@@ -537,9 +522,9 @@ export struct MyFavoritePage {
   private buildAiListState() {
     Column({ space: 10 }) {
       this.buildStickyCatalog();
-      List({ scroller: this.favoriteScroller, space: 16 }) {
-        ForEach(this.favorites, (item: FavoriteAiCocktailItem, index: number) => {
-          ListItem() {
+      Swiper() {
+        ForEach(this.favorites, (item: FavoriteAiCocktailItem) => {
+          Scroll() {
             FavoriteRecipeCard({
               item,
               isRemoving: this.removingFavoriteId === item.favoriteId,
@@ -548,30 +533,19 @@ export struct MyFavoritePage {
               }
             });
           }
+          .width('100%')
+          .scrollBar(BarState.Off);
         }, (item: FavoriteAiCocktailItem) => `${item.favoriteId}-${item.recipeKey}`);
       }
       .layoutWeight(1)
       .width('100%')
-      .scrollBar(BarState.Off)
-      .listDirection(Axis.Vertical)
-      .onTouch((event: TouchEvent) => {
-        if (event.type === TouchType.Down) {
-          this.isCatalogAutoScrolling = false;
-          this.catalogTargetIndex = -1;
-        }
-      })
-      .onScrollIndex((start: number) => {
-        if (this.isCatalogAutoScrolling) {
-          if (start === this.catalogTargetIndex) {
-            this.isCatalogAutoScrolling = false;
-            this.catalogTargetIndex = -1;
-          }
-          return;
-        }
-
-        if (start >= 0 && start < this.favorites.length) {
-          this.currentCatalogIndex = start;
-          this.scrollCatalogToCenter(start);
+      .indicator(false)
+      .index(this.currentCatalogIndex)
+      .loop(false)
+      .onChange((index: number) => {
+        if (index >= 0 && index < this.favorites.length) {
+          this.currentCatalogIndex = index;
+          this.scrollCatalogToCenter(index);
         }
       });
     }

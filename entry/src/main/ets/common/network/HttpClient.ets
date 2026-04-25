@@ -10,7 +10,7 @@ import {
   buildApiUrlWithBase,
   isAbsoluteUrl
 } from '../constants/ApiConfig';
-import { ApiResponse, HttpRequestError, HttpErrorPayload } from './ApiResponse';
+import { ApiResponse, HttpRequestError, HttpErrorPayload, toUserFacingMessage } from './ApiResponse';
 import { sessionStore } from '../storage/SessionStore';
 
 export interface HttpRequestOptions {
@@ -276,8 +276,9 @@ class HttpClient {
 
     let message = this.extractString(parsed as Record<string, Object>, 'message');
     if (!message) {
-      message = typeof maybeError['message'] === 'string' ? maybeError['message'] as string : 'Network request failed';
+      message = typeof maybeError['message'] === 'string' ? maybeError['message'] as string : '';
     }
+    message = toUserFacingMessage(message, '网络异常，请稍后重试');
 
     const errorPayload: HttpErrorPayload = {
       message,

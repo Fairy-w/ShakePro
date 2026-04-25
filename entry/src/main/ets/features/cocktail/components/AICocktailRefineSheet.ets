@@ -67,7 +67,7 @@ export struct AICocktailRefineSheet {
       .width('100%')
       .alignItems(VerticalAlign.Top);
 
-      TextInput({ placeholder: '比如：想更清爽、低酒精，或者只用手边现有材料', text: this.inputText })
+      TextInput({ placeholder: '比如：想更清爽、低酒精，或者更偏果香', text: this.inputText })
         .width('100%')
         .height(56)
         .fontSize(14)

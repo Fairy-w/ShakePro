@@ -1,5 +1,7 @@
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
+import { UiTokens } from '../../../common/constants/UiTokens';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import { authRepository } from '../repository/AuthRepository';
 
 @Entry({ routeName: 'RegisterPage' })
@@ -26,10 +28,11 @@ export struct RegisterPage {
     this.errorMessage = '';
 
     try {
+      const nickname: string = this.nickname.trim();
       await authRepository.register({
         username: this.username.trim(),
         password: this.password,
-        nickname: this.nickname.trim()
+        nickname: nickname.length > 0 ? nickname : undefined
       });
 
       this.showMessage('注册成功，请前往登录', false);
@@ -46,17 +49,17 @@ export struct RegisterPage {
     const password = this.password;
     const nickname = this.nickname.trim();
 
-    if (!username || !password || !nickname) {
-      return '请输入用户名、密码和昵称';
+    if (!username || !password) {
+      return '请输入用户名和密码，昵称可选';
     }
     if (username.length < 3 || username.length > 50) {
-      return '用户名长度需在3到50个字符之间';
+      return '用户名长度需在 3 到 50 个字符之间';
     }
     if (password.length < 6 || password.length > 50) {
-      return '密码长度需在6到50个字符之间';
+      return '密码长度需在 6 到 50 个字符之间';
     }
     if (nickname.length > 50) {
-      return '昵称长度不能超过50个字符';
+      return '昵称最多 50 个字符，可留空';
     }
 
     return '';
@@ -68,41 +71,55 @@ export struct RegisterPage {
   }
 
   private resolveErrorMessage(error: Object): string {
-    try {
-      const errorObj = error as Record<string, string>;
-      if (errorObj && errorObj.message && typeof errorObj.message === 'string') {
-        const message = errorObj.message.trim();
-        if (message.length > 0) {
-          return message;
-        }
-      }
-    } catch {
+    const errorObject = error as Record<string, Object>;
+    const message = errorObject['message'];
+    const code = errorObject['code'];
+    if (typeof code === 'number' && code === 400) {
+      return '注册信息格式不正确，请检查后重试';
     }
-    return '注册失败';
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, '注册失败，请检查用户名和密码格式后重试');
   }
 
   @Builder
-  private buildInput(label: string, placeholder: string, field: string) {
+  private buildFloatingAccent(width: number, height: number, color: string, opacity: number, x: number, y: number) {
+    Column()
+      .width(width)
+      .height(height)
+      .borderRadius(width / 2)
+      .backgroundColor(color)
+      .opacity(opacity)
+      .position({ x, y });
+  }
+
+  @Builder
+  private buildInput(
+    label: string,
+    placeholder: string,
+    field: string,
+    fieldKey: 'username' | 'password' | 'nickname',
+    isPassword: boolean = false
+  ) {
     Column({ space: 8 }) {
       Text(label)
         .fontSize(13)
         .fontWeight(FontWeight.Medium)
-        .fontColor('#5F7481');
+        .fontColor(UiTokens.textSecondary);
 
       TextInput({ placeholder, text: field })
+        .width('100%')
         .height(52)
-        .type(label === '密码' ? InputType.Password : InputType.Normal)
-        .backgroundColor('#FFFFFF')
-        .fontSize(16)
-        .fontColor('#173240')
-        .placeholderColor('#91A3AE')
+        .type(isPassword ? InputType.Password : InputType.Normal)
+        .backgroundColor(UiTokens.surfacePrimary)
+        .fontSize(15)
+        .fontColor(UiTokens.textPrimary)
+        .placeholderColor(UiTokens.textTertiary)
         .borderRadius(18)
         .padding({ left: 16, right: 16 })
-        .border({ width: 1, color: '#D7E6ED' })
+        .border({ width: 1, color: UiTokens.borderPrimary })
         .onChange((value: string) => {
-          if (label === '用户名') {
+          if (fieldKey === 'username') {
             this.username = value;
-          } else if (label === '密码') {
+          } else if (fieldKey === 'password') {
             this.password = value;
           } else {
             this.nickname = value;
@@ -114,55 +131,57 @@ export struct RegisterPage {
   }
 
   build() {
-    Stack() {
+    Stack({ alignContent: Alignment.TopStart }) {
       Column()
         .width('100%')
         .height('100%')
         .linearGradient({
           direction: GradientDirection.Top,
           repeating: false,
-          colors: [['#F7FBFD', 0.0], ['#EEF5F8', 0.62], ['#E8F1F5', 1.0]]
+          colors: [[UiTokens.pageGradientStart, 0.0], [UiTokens.pageGradientMiddle, 0.56], [UiTokens.pageGradientEnd, 1.0]]
         });
 
-      Column()
-        .width(220)
-        .height(220)
-        .borderRadius(110)
-        .backgroundColor('#DDF5F1')
-        .opacity(0.74)
-        .position({ x: 250, y: -30 });
+      this.buildFloatingAccent(236, 236, UiTokens.pageAccentMint, 0.24, 228, -40);
+      this.buildFloatingAccent(198, 198, UiTokens.pageAccentBlue, 0.22, -62, 150);
+      this.buildFloatingAccent(154, 154, UiTokens.accentWarmSoft, 0.3, 188, 520);
 
       Scroll() {
         Column({ space: 18 }) {
-          Column({ space: 10 }) {
+          Column({ space: 8 }) {
+            Text('SHAKEPRO ACCOUNT')
+              .fontSize(11)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(UiTokens.textAccent)
+              .letterSpacing(1.6);
+
             Text('创建账号')
               .fontSize(30)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#173240');
+              .fontColor(UiTokens.textPrimary);
 
             Text('注册后可使用 AI 配方、工作台和资料同步。')
               .fontSize(13)
-              .fontColor('#748591');
+              .fontColor(UiTokens.textSecondary)
+              .lineHeight(20);
           }
           .width('100%')
           .alignItems(HorizontalAlign.Start)
-          .margin({ top: 72 });
+          .margin({ top: 56 });
 
           Column({ space: 14 }) {
-            this.buildInput('用户名', '请输入用户名', this.username);
-            this.buildInput('密码', '请输入密码', this.password);
-            this.buildInput('昵称', '请输入昵称', this.nickname);
+            this.buildInput('用户名', '请输入用户名（3-50个字符）', this.username, 'username');
+            this.buildInput('密码', '请输入密码（6-50个字符）', this.password, 'password', true);
+            this.buildInput('昵称（选填）', '请输入昵称（可留空）', this.nickname, 'nickname');
 
             Button(this.isLoading ? '注册中...' : '立即注册')
               .width('100%')
               .height(52)
-              .fontSize(18)
+              .fontSize(16)
               .fontWeight(FontWeight.Bold)
               .enabled(!this.isLoading)
-              .fontColor('#124056')
-              .backgroundColor('#DDF5F1')
+              .fontColor(UiTokens.textInverse)
+              .backgroundColor(UiTokens.brandStrong)
               .borderRadius(18)
-              .border({ width: 1, color: '#BFE7E6' })
               .onClick(() => {
                 void this.register();
               });
@@ -170,44 +189,46 @@ export struct RegisterPage {
             if (this.isLoading) {
               Row({ space: 8 }) {
                 LoadingProgress()
-                  .width(16)
-                  .height(16)
-                  .color('#2F728A');
+                  .width(15)
+                  .height(15)
+                  .color(UiTokens.aiPrimary);
 
                 Text('正在创建账号...')
                   .fontSize(12)
-                  .fontColor('#72838F');
+                  .fontColor(UiTokens.textSecondary);
               }
               .width('100%')
               .justifyContent(FlexAlign.Center);
             }
 
-            if (this.errorMessage) {
+            if (this.errorMessage.length > 0) {
               Text(this.errorMessage)
                 .width('100%')
                 .padding({ left: 14, right: 14, top: 10, bottom: 10 })
-                .backgroundColor('#FDEFF0')
+                .backgroundColor(UiTokens.errorSoft)
                 .borderRadius(12)
+                .border({ width: 1, color: UiTokens.borderWarm })
                 .fontSize(13)
-                .fontColor('#C24A63')
+                .fontColor(UiTokens.error)
                 .textAlign(TextAlign.Center);
             }
           }
           .width('100%')
-          .padding(18)
-          .backgroundColor('#F7FBFD')
+          .padding({ left: 18, right: 18, top: 18, bottom: 18 })
+          .backgroundColor(UiTokens.surfaceWarm)
           .borderRadius(24)
-          .border({ width: 1, color: '#D7E6ED' });
+          .border({ width: 1, color: UiTokens.borderWarm })
+          .shadow({ radius: 18, color: UiTokens.shadowSoft, offsetX: 0, offsetY: 10 });
 
           Row({ space: 8 }) {
             Text('已有账号？')
               .fontSize(14)
-              .fontColor('#5F7E8F');
+              .fontColor(UiTokens.textSecondary);
 
             Text('去登录')
               .fontSize(14)
               .fontWeight(FontWeight.Medium)
-              .fontColor('#2C7288')
+              .fontColor(UiTokens.textAccent)
               .onClick(() => {
                 router.replaceUrl({ url: 'features/auth/pages/LoginPage' });
               });
@@ -217,13 +238,14 @@ export struct RegisterPage {
           .margin({ bottom: 28 });
         }
         .width('100%')
-        .padding({ left: 24, right: 24, bottom: 24 });
+        .padding({ left: 20, right: 20, bottom: 20 });
       }
       .width('100%')
       .height('100%')
       .scrollBar(BarState.Off);
     }
     .width('100%')
-    .height('100%');
+    .height('100%')
+    .backgroundColor(UiTokens.pageBackground);
   }
 }

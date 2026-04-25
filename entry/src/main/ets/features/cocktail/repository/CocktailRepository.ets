@@ -2,12 +2,18 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
 import { cocktailApi } from '../api/CocktailApi';
 import {
-  CocktailBannerDto,
   CocktailCategoryDto,
   CocktailDetailDto,
   CocktailPageDto,
   CocktailPageQuery
 } from '../model/CocktailDetailModels';
+import {
+  RecommendCocktailCardModel,
+  RecommendCocktailItemDto,
+  RecommendCocktailPayloadDto,
+  RecommendCocktailRequest,
+  toRecommendCocktailCardModel
+} from '../model/CocktailRecommendModels';
 
 const COCKTAIL_REPO_LOG_DOMAIN: number = 0x0000;
 const COCKTAIL_REPO_LOG_TAG: string = 'ShakeProCocktailRepo';
@@ -37,16 +43,33 @@ class CocktailRepository {
     return this.unwrapResponse<CocktailDetailDto>(response, '获取鸡尾酒详情失败');
   }
 
-  async getCocktailBanner(): Promise<CocktailBannerDto[]> {
-    hilog.info(COCKTAIL_REPO_LOG_DOMAIN, COCKTAIL_REPO_LOG_TAG, 'get cocktail banner');
-    const response = await cocktailApi.getCocktailBanner();
-    return this.unwrapResponse<CocktailBannerDto[]>(response, '获取首页 Banner 失败');
-  }
-
   async getCocktailCategories(): Promise<CocktailCategoryDto[]> {
     hilog.info(COCKTAIL_REPO_LOG_DOMAIN, COCKTAIL_REPO_LOG_TAG, 'get cocktail categories');
     const response = await cocktailApi.getCocktailCategories();
     return this.unwrapResponse<CocktailCategoryDto[]>(response, '获取鸡尾酒分类失败');
+  }
+
+
+  async getRecommendedCocktails(request: RecommendCocktailRequest): Promise<RecommendCocktailCardModel[]> {
+    hilog.info(
+      COCKTAIL_REPO_LOG_DOMAIN,
+      COCKTAIL_REPO_LOG_TAG,
+      'get recommend cocktails seedId=%{public}d topk=%{public}d offset=%{public}d',
+      request.seedId,
+      request.topk ?? 3,
+      request.offset ?? 0
+    );
+    const response = await cocktailApi.getRecommendedCocktails(request);
+    const payload = this.unwrapResponse<RecommendCocktailPayloadDto>(response, '获取首页推荐失败');
+    const result: RecommendCocktailCardModel[] = [];
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    for (let index: number = 0; index < items.length; index += 1) {
+      const mapped: RecommendCocktailCardModel | null = toRecommendCocktailCardModel(items[index] as RecommendCocktailItemDto);
+      if (mapped !== null) {
+        result.push(mapped);
+      }
+    }
+    return result;
   }
 
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {

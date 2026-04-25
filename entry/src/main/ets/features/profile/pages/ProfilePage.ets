@@ -1,132 +1,126 @@
-import ItemData from '../../home/model/ItemData';
-import MainViewModel from '../../home/viewmodel/MainViewModel';
-import { router } from '@kit.ArkUI';
+import common from '@ohos.app.ability.common';
+import router from '@ohos.router';
+import { UiTokens } from '../../../common/constants/UiTokens';
+import { sessionStore } from '../../../common/storage/SessionStore';
+import { ProfileHeroCard } from '../components/ProfileHeroCard';
+import { ProfileMenuSection } from '../components/ProfileMenuSection';
+import { PROFILE_OVERVIEW, PROFILE_SHORTCUTS, ProfileMenuItem } from '../model/ProfileMockData';
 
 @Entry({ routeName: 'Mine' })
 @Component
 export struct ProfilePage {
+  @Prop pageBottomInset: number = 0;
+  private readonly shortcutItems: ProfileMenuItem[] = PROFILE_SHORTCUTS;
+  @State private profileDisplayName: string = PROFILE_OVERVIEW.displayName;
+
+  aboutToAppear(): void {
+    void this.refreshProfileOverview();
+  }
+
+  onPageShow(): void {
+    void this.refreshProfileOverview();
+  }
+
+  private resolvePageBottomInset(): number {
+    return this.pageBottomInset > 0 ? this.pageBottomInset : 32;
+  }
+
+  private getHostContext(): common.BaseContext {
+    return this.getUIContext().getHostContext() as common.BaseContext;
+  }
+
   @Builder
-  private settingCell(item: ItemData, index: number) {
-    Row({ space: 12 }) {
-      Row({ space: 12 }) {
-        if (item.img) {
-          Row() {
-            Image(item.img)
-              .width(28)
-              .height(28)
-              .objectFit(ImageFit.Contain);
-          }
-          .width(46)
-          .height(46)
-          .justifyContent(FlexAlign.Center)
-          .backgroundColor(index % 2 === 0 ? '#E8F5FB' : '#DDF5F1')
-          .borderRadius(16);
-        }
+  private buildFloatingAccent(width: number, height: number, color: string, opacity: number, x: number, y: number) {
+    Column()
+      .width(width)
+      .height(height)
+      .borderRadius(width / 2)
+      .backgroundColor(color)
+      .opacity(opacity)
+      .position({ x, y });
+  }
 
-        Column({ space: 4 }) {
-          Text(item.title)
-            .fontSize(16)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
-
-          Text(index === 0 ? '查看消息、活动和内容推荐' : index === 1 ? '同步调酒数据与历史记录' : '整理你的页面展示与偏好')
-            .fontSize(11)
-            .fontColor('#72838F')
-            .lineHeight(16);
-        }
-        .alignItems(HorizontalAlign.Start);
-      }
-      .layoutWeight(1);
-
-      if (item.others === null) {
-        Image($r('app.media.right_grey'))
-          .width(20)
-          .height(20)
-          .opacity(0.6);
-      } else {
-        Toggle({ type: ToggleType.Switch, isOn: true })
-          .selectedColor('#8EDBCD');
-      }
+  private resolveUsernameFromRawProfile(rawProfile: string): string {
+    if (rawProfile.trim().length === 0) {
+      return '';
     }
-    .width('100%')
-    .padding(16)
-    .backgroundColor('#FFFFFF')
-    .borderRadius(20)
-    .border({ width: 1, color: '#D7E6ED' });
+
+    try {
+      const parsed = JSON.parse(rawProfile) as Record<string, Object>;
+      const usernameValue = parsed['username'];
+      if (typeof usernameValue === 'string') {
+        return usernameValue.trim();
+      }
+      return '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  private async refreshProfileOverview(): Promise<void> {
+    try {
+      await sessionStore.init(this.getHostContext());
+      const rawProfile: string = await sessionStore.getUserProfile();
+      const username: string = this.resolveUsernameFromRawProfile(rawProfile);
+      if (username.length === 0) {
+        this.profileDisplayName = PROFILE_OVERVIEW.displayName;
+        return;
+      }
+
+      this.profileDisplayName = username;
+    } catch (_) {
+      this.profileDisplayName = PROFILE_OVERVIEW.displayName;
+    }
   }
 
   build() {
-    Scroll() {
-      Column({ space: 18 }) {
-        Column({ space: 14 }) {
-          Text('资料中心')
-            .fontSize(28)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
+    Stack({ alignContent: Alignment.TopStart }) {
+      Column()
+        .width('100%')
+        .height('100%')
+        .linearGradient({
+          direction: GradientDirection.Top,
+          repeating: false,
+          colors: [[UiTokens.pageGradientStart, 0.0], [UiTokens.pageGradientMiddle, 0.55], [UiTokens.pageGradientEnd, 1.0]]
+        });
 
-          Row({ space: 14 }) {
-            Image($r('app.media.myself'))
-              .width(72)
-              .height(72)
-              .borderRadius(36);
+      this.buildFloatingAccent(260, 260, UiTokens.pageAccentBlue, 0.22, -94, -40);
+      this.buildFloatingAccent(210, 210, UiTokens.pageAccentMint, 0.2, 248, 176);
+      this.buildFloatingAccent(180, 180, UiTokens.accentWarmSoft, 0.22, 168, 508);
 
-            Column({ space: 8 }) {
-              Text('._.')
-                .fontSize(24)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#173240');
+      Scroll() {
+        Column({ space: 18 }) {
+          ProfileHeroCard({
+            avatar: PROFILE_OVERVIEW.avatar,
+            displayName: this.profileDisplayName
+          });
 
-              Text('2000000@cdu.com')
-                .fontSize(13)
-                .fontColor('#72838F');
-
-              Text('已开启同步、偏爱金酒和清爽风味')
-                .fontSize(12)
-                .fontColor('#7E909A');
+          ProfileMenuSection({
+            title: '我的',
+            items: this.shortcutItems,
+            onItemClick: (itemId: string) => {
+              if (itemId === 'favorite-page') {
+                router.pushUrl({ url: 'features/favorite/pages/MyFavoritePage' }, 3000);
+              } else if (itemId === 'my-posts') {
+                router.pushUrl({ url: 'features/profile/pages/ProfilePostsPage' }, 3000);
+              } else {
+                router.pushUrl({ url: 'features/profile/pages/ProfileSettingsPage' }, 3000);
+              }
             }
-            .layoutWeight(1)
-            .alignItems(HorizontalAlign.Start);
-          }
-          .width('100%')
-          .padding(18)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(24)
-          .border({ width: 1, color: '#D7E6ED' });
-        }
-        .width('100%')
-        .alignItems(HorizontalAlign.Start);
-
-        Column({ space: 12 }) {
-          Text('常用设置')
-            .fontSize(20)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
-
-          ForEach(MainViewModel.getSettingListData(), (item: ItemData, index: number) => {
-            this.settingCell(item, index);
           });
         }
         .width('100%')
-        .alignItems(HorizontalAlign.Start);
-
-        Button('退出登录', { type: ButtonType.Capsule })
-          .width('100%')
-          .height(50)
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
-          .backgroundColor('#1E566A')
-          .margin({ top: 10, bottom: 24 })
-          .onClick(() => {
-            router.replaceUrl({
-              url: 'features/auth/pages/LoginPage'
-            }, 3000);
-          });
+        .alignItems(HorizontalAlign.Start)
+        .padding({ left: 16, right: 16, top: 20, bottom: this.resolvePageBottomInset() })
+        .constraintSize({ minHeight: '100%' })
+        .justifyContent(FlexAlign.Start);
       }
       .width('100%')
-      .padding({ left: 16, right: 16, top: 20, bottom: 40 });
+      .height('100%')
+      .scrollBar(BarState.Off);
     }
-    .backgroundColor('#F4F8FB')
-    .scrollBar(BarState.Off);
+    .width('100%')
+    .height('100%')
+    .backgroundColor(UiTokens.pageBackground);
   }
 }

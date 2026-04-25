@@ -7,6 +7,12 @@ import { getMaterialVisualMeta, normalizeCategoryId, normalizeString } from './S
 
 let stagingMaterialsState: SelectableMaterial[] = [];
 let recordedDraftsState: MaterialDraft[] = [];
+const RECORDED_MATERIALS_REFRESH_KEY: string = 'station.recordedMaterialsRefreshSignal';
+export function notifyRecordedMaterialsChanged(): void {
+  const currentValue: number | undefined = AppStorage.get<number>(RECORDED_MATERIALS_REFRESH_KEY);
+  const nextValue = typeof currentValue === 'number' ? currentValue + 1 : 1;
+  AppStorage.setOrCreate(RECORDED_MATERIALS_REFRESH_KEY, nextValue);
+}
 
 function cloneMaterialDraft(draft: MaterialDraft): MaterialDraft {
   return {
@@ -160,14 +166,17 @@ export function upsertRecordedMaterialDraft(draft: MaterialDraft): void {
   const existingIndex = recordedDraftsState.findIndex((item: MaterialDraft): boolean => item.id === clonedDraft.id);
   if (existingIndex === -1) {
     recordedDraftsState = [clonedDraft].concat(recordedDraftsState);
+    notifyRecordedMaterialsChanged();
     return;
   }
   recordedDraftsState[existingIndex] = clonedDraft;
   recordedDraftsState = recordedDraftsState.slice();
+  notifyRecordedMaterialsChanged();
 }
 
 export function removeRecordedMaterialById(materialId: string): void {
   recordedDraftsState = recordedDraftsState.filter((item: MaterialDraft): boolean => item.id !== materialId);
+  notifyRecordedMaterialsChanged();
 }
 
 export function saveMaterialDraft(draft: MaterialDraft): void {

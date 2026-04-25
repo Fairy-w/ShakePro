@@ -1,7 +1,8 @@
-import { TabsConcaveCircle } from '../../../common/components/navigation/TabsConcaveCircle';
+import { FloatingDock } from '../../../common/components/navigation/FloatingDock';
 import { UiTokens } from '../../../common/constants/UiTokens';
 import { TabMenusInterfaceIRequired } from '../../../common/types/TabMenusInterface';
-import { MyFavoritePage } from '../../favorite/pages/MyFavoritePage';
+import { CommunityPage } from '../../community/pages/CommunityPage';
+import { ProfilePage } from '../../profile/pages/ProfilePage';
 import { RecipeLibraryPage } from '../../recipe/pages/RecipeLibraryPage';
 import { BartendingStationPage } from './BartendingStationPage';
 import { MainPage } from './HomePage';
@@ -21,19 +22,27 @@ export struct NavigationPage {
     },
     {
       text: $r('app.string.custom_tab_bar'),
-      image: $r('app.media.img_1'),
-      selectImage: $r('app.media.img_1'),
+      image: $r('app.media.icon1'),
+      selectImage: $r('app.media.icon1'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
       pagePath: 'features/home/pages/BartendingStationPage'
     },
     {
       text: $r('app.string.custom_tab_news'),
-      image: $r('app.media.img'),
-      selectImage: $r('app.media.img'),
+      image: $r('app.media.icon2'),
+      selectImage: $r('app.media.icon2'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
       pagePath: 'features/recipe/pages/RecipeLibraryPage'
+    },
+    {
+      text: $r('app.string.custom_tab_friend'),
+      image: $r('app.media.icon3'),
+      selectImage: $r('app.media.icon3'),
+      tabsFontColor: UiTokens.textSecondary,
+      tabsSelectFontColor: UiTokens.textPrimary,
+      pagePath: 'features/community/pages/CommunityPage'
     },
     {
       text: $r('app.string.custom_tab_mine'),
@@ -41,7 +50,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.tab_user'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
-      pagePath: 'features/favorite/pages/MyFavoritePage'
+      pagePath: 'features/profile/pages/ProfilePage'
     }
   ];
 
@@ -52,13 +61,18 @@ export struct NavigationPage {
   @Builder
   private buildCurrentPage() {
     if (this.currentIndex === 0) {
-      MainPage();
+      MainPage({ pageBottomInset: UiTokens.dockPageInset });
     } else if (this.currentIndex === 1) {
-      BartendingStationPage();
+      BartendingStationPage({
+        floatingActionBottomInset: UiTokens.stationFloatingBarInset,
+        contentBottomInset: UiTokens.stationContentBottomInset
+      });
     } else if (this.currentIndex === 2) {
-      RecipeLibraryPage();
+      RecipeLibraryPage({ pageBottomInset: UiTokens.dockPageInset });
+    } else if (this.currentIndex === 3) {
+      CommunityPage({ pageBottomInset: UiTokens.dockPageInset });
     } else {
-      MyFavoritePage();
+      ProfilePage({ pageBottomInset: UiTokens.dockPageInset });
     }
   }
 
@@ -74,46 +88,42 @@ export struct NavigationPage {
         });
 
       Column()
-        .width(240)
+        .width(200)
         .height(240)
-        .borderRadius(120)
+        .borderRadius(48)
         .backgroundColor(UiTokens.pageAccentBlue)
-        .opacity(0.52)
-        .position({ x: -70, y: -36 });
+        .opacity(0.46)
+        .position({ x: -44, y: -18 });
 
       Column()
-        .width(220)
-        .height(220)
-        .borderRadius(110)
-        .backgroundColor(UiTokens.pageAccentMint)
-        .opacity(0.72)
-        .position({ x: 250, y: 600 });
+        .width(240)
+        .height(176)
+        .borderRadius(44)
+        .backgroundColor(UiTokens.surfaceWarmAlt)
+        .opacity(0.88)
+        .position({ x: 178, y: 632 });
 
       Stack({ alignContent: Alignment.Bottom }) {
         Stack() {
           this.buildCurrentPage();
         }
         .width('100%')
-        .height('100%')
-        .borderRadius(UiTokens.radiusXl)
-        .backgroundColor(UiTokens.pageGradientStart)
-        .margin({ left: 12, right: 12, top: 12 });
+        .height('100%');
 
-        TabsConcaveCircle({
-          tabsMenu: this.tabsMenu,
-          selectIndex: this.currentIndex,
+        FloatingDock({
+          items: this.tabsMenu,
+          selectedIndex: this.currentIndex,
           renderContent: this.renderContent,
-          tabsBgColor: UiTokens.surfacePrimary,
-          tabsSelectBgColor: UiTokens.aiSoft,
-          tabsFontColor: UiTokens.textSecondary,
-          tabsSelectFontColor: UiTokens.textPrimary,
-          tabHeight: 82
+          dockHeight: UiTokens.dockHeight
         })
-          .margin({ left: 16, right: 16, bottom: 18 });
+          .margin({
+            left: UiTokens.dockHorizontalMargin,
+            right: UiTokens.dockHorizontalMargin,
+            bottom: UiTokens.dockBottomMargin
+          });
       }
       .width('100%')
-      .height('100%')
-      .padding({ top: 6, bottom: 4 });
+      .height('100%');
     }
     .width('100%')
     .height('100%');

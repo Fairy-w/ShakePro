@@ -3,6 +3,8 @@ import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
 import abilityAccessCtrl, { Permissions } from '@ohos.abilityAccessCtrl';
 import { customScan, scanCore } from '@kit.ScanKit';
+import { UiTokens } from '../../../common/constants/UiTokens';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import {
   MaterialImagePreviewOverlay,
   MaterialPreviewTagStyle,
@@ -94,10 +96,7 @@ export struct MaterialScannerPage {
   private resolveErrorMessage(error: Object, fallbackMessage: string): string {
     const errorObject = error as Record<string, Object>;
     const message = errorObject['message'];
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-    return fallbackMessage;
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, fallbackMessage);
   }
 
   private shouldRedirectToLogin(error: Object): boolean {
@@ -140,7 +139,7 @@ export struct MaterialScannerPage {
 
   private getScannerSubline(): string {
     if (this.requestBusy) {
-      return '已捕获条码，正在调用后端 lookup 接口。';
+      return '已捕获条码，正在查询商品信息。';
     }
     if (this.cameraBusy) {
       return '请将条码保持在黄色扫描框内，系统会自动识别。';
@@ -189,8 +188,8 @@ export struct MaterialScannerPage {
     if (!this.previewTarget) {
       return {
         label: '',
-        textColor: '#245C82',
-        backgroundColor: '#E8F5FB'
+        textColor: UiTokens.textAccent,
+        backgroundColor: UiTokens.primarySoft
       };
     }
     const sourceLabel = this.previewTarget.sourceLabel.trim().length > 0 ? this.previewTarget.sourceLabel : '扫码识别';
@@ -205,15 +204,15 @@ export struct MaterialScannerPage {
     if (!this.previewTarget) {
       return {
         label: '',
-        textColor: '#2B6C63',
-        backgroundColor: '#EEF6F2'
+        textColor: UiTokens.success,
+        backgroundColor: UiTokens.successSoft
       };
     }
     const hasItem = this.previewTarget.hasItem;
     return {
       label: hasItem ? '我有' : '暂时没有',
-      textColor: hasItem ? '#2B6C63' : '#A66A1C',
-      backgroundColor: hasItem ? '#EEF6F2' : '#FDEEDB'
+      textColor: hasItem ? UiTokens.success : UiTokens.warning,
+      backgroundColor: hasItem ? UiTokens.successSoft : UiTokens.warningSoft
     };
   }
 
@@ -498,14 +497,14 @@ export struct MaterialScannerPage {
         Text('<')
           .fontSize(18)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#173240');
+          .fontColor(UiTokens.textPrimary);
       }
       .width(42)
       .height(42)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor('#FFFFFF')
+      .backgroundColor(UiTokens.surfacePrimary)
       .borderRadius(16)
-      .border({ width: 1, color: '#D7E6ED' })
+      .border({ width: 1, color: UiTokens.borderPrimary })
       .onClick(() => {
         router.back();
       });
@@ -514,11 +513,11 @@ export struct MaterialScannerPage {
         Text('扫描酒瓶条码')
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#173240');
+          .fontColor(UiTokens.textPrimary);
 
         Text('扫描识别后直接标记我有或暂时没有，不再补库存细节。')
           .fontSize(12)
-          .fontColor('#72838F');
+          .fontColor(UiTokens.textSecondary);
       }
       .layoutWeight(1)
       .margin({ left: 12 })
@@ -534,7 +533,7 @@ export struct MaterialScannerPage {
     }
     .width(28)
     .height(28)
-    .border({ width: 3, color: '#F6D38A' })
+    .border({ width: 3, color: UiTokens.accentWarm })
     .borderRadius(10)
     .position(position);
   }
@@ -550,7 +549,7 @@ export struct MaterialScannerPage {
         .width('100%')
         .height(this.previewHeightVp)
         .borderRadius(28)
-        .backgroundColor('#0E1720')
+        .backgroundColor(UiTokens.brandStrong)
         .onLoad(() => {
           void this.handlePreviewLoad();
         })
@@ -573,9 +572,9 @@ export struct MaterialScannerPage {
           Text(this.getStatusChipText())
             .fontSize(11)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#173240')
+            .fontColor(UiTokens.textPrimary)
             .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-            .backgroundColor('#DDF5F1')
+            .backgroundColor(UiTokens.primarySoft)
             .borderRadius(14);
         }
         .width('100%')
@@ -589,13 +588,13 @@ export struct MaterialScannerPage {
             .width(250)
             .height(150)
             .borderRadius(24)
-            .border({ width: 2, color: '#F8E9CF' })
-            .backgroundColor('#00000008');
+            .border({ width: 2, color: UiTokens.borderWarm })
+            .backgroundColor(UiTokens.surfaceOverlay);
 
           Row()
             .width(206)
             .height(2)
-            .backgroundColor('#F8E9CF')
+            .backgroundColor(UiTokens.borderWarm)
             .opacity(0.9);
 
           this.buildScannerCorner({ x: 23, y: 23 });
@@ -608,12 +607,12 @@ export struct MaterialScannerPage {
               LoadingProgress()
                 .width(24)
                 .height(24)
-                .color('#F6D38A');
+                .color(UiTokens.accentWarm);
 
               Text('相机预览准备中')
                 .fontSize(14)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#FFFFFF');
+                .fontColor(UiTokens.textInverse);
             }
           }
         }
@@ -622,17 +621,19 @@ export struct MaterialScannerPage {
           Text(this.getScannerHeadline())
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#FFFFFF');
+            .fontColor(UiTokens.textInverse);
 
           Text(this.getScannerSubline())
             .fontSize(12)
-            .fontColor('#D7E6ED')
+            .fontColor(UiTokens.textInverse)
+            .opacity(0.86)
             .textAlign(TextAlign.Center)
             .lineHeight(18);
 
           Text(this.scannerStatus)
             .fontSize(12)
-            .fontColor('#E8F4FB')
+            .fontColor(UiTokens.textInverse)
+            .opacity(0.94)
             .textAlign(TextAlign.Center)
             .lineHeight(18);
         }
@@ -645,7 +646,7 @@ export struct MaterialScannerPage {
     }
     .width('100%')
     .height(this.previewHeightVp)
-    .backgroundColor('#0E1720')
+    .backgroundColor(UiTokens.brandStrong)
     .borderRadius(28)
     .clip(true)
     .onClick(() => {
@@ -658,9 +659,9 @@ export struct MaterialScannerPage {
     Text(title)
       .fontSize(12)
       .fontWeight(active ? FontWeight.Bold : FontWeight.Medium)
-      .fontColor(active ? '#173240' : '#6E818D')
+      .fontColor(active ? UiTokens.textPrimary : UiTokens.textSecondary)
       .padding({ left: 14, right: 14, top: 9, bottom: 9 })
-      .backgroundColor(active ? '#DDF5F1' : '#F4F8FB')
+      .backgroundColor(active ? UiTokens.primarySoft : UiTokens.surfaceSecondary)
       .borderRadius(16)
       .onClick(() => {
         onTap();
@@ -687,10 +688,10 @@ export struct MaterialScannerPage {
               .width('100%')
               .height(48)
               .padding({ left: 16, right: 16 })
-              .backgroundColor('#F4F8FB')
+              .backgroundColor(UiTokens.surfaceSecondary)
               .borderRadius(16)
               .fontSize(14)
-              .placeholderColor('#91A4AE')
+              .placeholderColor(UiTokens.textTertiary)
               .onChange((value: string) => {
                 this.manualBarcode = value;
               });
@@ -701,8 +702,8 @@ export struct MaterialScannerPage {
                 .height(46)
                 .fontSize(14)
                 .fontWeight(FontWeight.Bold)
-                .fontColor('#FFFFFF')
-                .backgroundColor('#1B596E')
+                .fontColor(UiTokens.textInverse)
+                .backgroundColor(UiTokens.primary)
                 .enabled(!this.requestBusy)
                 .onClick(() => {
                   void this.mockRecognizeByManualCode();
@@ -713,8 +714,8 @@ export struct MaterialScannerPage {
                 .height(46)
                 .fontSize(14)
                 .fontWeight(FontWeight.Medium)
-                .fontColor('#5A7180')
-                .backgroundColor('#EEF5F8')
+                .fontColor(UiTokens.textSecondary)
+                .backgroundColor(UiTokens.surfaceMuted)
                 .onClick(() => {
                   this.manualBarcode = '';
                 });
@@ -733,8 +734,8 @@ export struct MaterialScannerPage {
           .height(50)
           .fontSize(16)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
-          .backgroundColor('#1B596E')
+          .fontColor(UiTokens.textInverse)
+          .backgroundColor(UiTokens.primary)
           .enabled(this.previewReady && !this.requestBusy && !this.cameraBusy)
           .onClick(() => {
             void this.startScannerPreview();
@@ -745,8 +746,8 @@ export struct MaterialScannerPage {
           .height(50)
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#245C82')
-          .backgroundColor('#E8F5FB')
+          .fontColor(UiTokens.textAccent)
+          .backgroundColor(UiTokens.primarySoft)
           .enabled(!this.requestBusy)
           .onClick(() => {
             router.pushUrl({ url: 'features/station/pages/MaterialLibraryPage' }, 3000);
@@ -756,9 +757,9 @@ export struct MaterialScannerPage {
     }
     .width('100%')
     .padding(18)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
+    .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   @Builder
@@ -781,15 +782,15 @@ export struct MaterialScannerPage {
           Text(item.name)
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .fontColor('#173240');
+            .fontColor(UiTokens.textPrimary);
 
           Text(item.brand + ' · ' + item.sourceLabel)
             .fontSize(12)
-            .fontColor('#72838F');
+            .fontColor(UiTokens.textSecondary);
 
           Text('识别成功后只需要标记你现在是否持有。')
             .fontSize(12)
-            .fontColor('#72838F')
+            .fontColor(UiTokens.textSecondary)
             .lineHeight(18)
             .maxLines(2);
         }
@@ -801,16 +802,16 @@ export struct MaterialScannerPage {
       Row({ space: 8 }) {
         Text('条码 ' + item.barcode)
           .fontSize(11)
-          .fontColor('#245C82')
+          .fontColor(UiTokens.textAccent)
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor('#E8F5FB')
+          .backgroundColor(UiTokens.primarySoft)
           .borderRadius(14);
 
         Text(item.hasItem ? '当前标记为有' : '当前标记为暂时没有')
           .fontSize(11)
-          .fontColor(item.hasItem ? '#2B6C63' : '#A66A1C')
+          .fontColor(item.hasItem ? UiTokens.success : UiTokens.warning)
           .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-          .backgroundColor(item.hasItem ? '#EEF6F2' : '#FDEEDB')
+          .backgroundColor(item.hasItem ? UiTokens.successSoft : UiTokens.warningSoft)
           .borderRadius(14);
       }
       .width('100%');
@@ -840,8 +841,8 @@ export struct MaterialScannerPage {
           .height(50)
           .fontSize(15)
           .fontWeight(FontWeight.Bold)
-          .fontColor('#FFFFFF')
-          .backgroundColor('#1B596E')
+          .fontColor(UiTokens.textInverse)
+          .backgroundColor(UiTokens.primary)
           .enabled(!this.requestBusy)
           .onClick(() => {
             void this.handleDirectSave(item, true);
@@ -852,8 +853,8 @@ export struct MaterialScannerPage {
           .height(50)
           .fontSize(14)
           .fontWeight(FontWeight.Medium)
-          .fontColor('#A66A1C')
-          .backgroundColor('#F8E9CF')
+          .fontColor(UiTokens.warning)
+          .backgroundColor(UiTokens.warningSoft)
           .enabled(!this.requestBusy)
           .onClick(() => {
             void this.handleDirectSave(item, false);
@@ -875,13 +876,13 @@ export struct MaterialScannerPage {
     }
     .width('100%')
     .padding(18)
-    .backgroundColor('#FFFFFF')
+    .backgroundColor(UiTokens.surfacePrimary)
     .borderRadius(24)
-    .border({ width: 1, color: '#D7E6ED' });
+    .border({ width: 1, color: UiTokens.borderPrimary });
   }
 
   build() {
-    Stack() {
+    Stack({ alignContent: Alignment.TopStart }) {
       Scroll() {
         Column({ space: 18 }) {
           this.buildHeader();
@@ -896,7 +897,8 @@ export struct MaterialScannerPage {
       }
       .width('100%')
       .height('100%')
-      .backgroundColor('#F4F8FB')
+      .align(Alignment.TopStart)
+      .backgroundColor(UiTokens.pageBackground)
       .scrollBar(BarState.Off);
 
       if (this.materialPreviewVisible) {
@@ -912,6 +914,7 @@ export struct MaterialScannerPage {
       }
     }
     .width('100%')
-    .height('100%');
+    .height('100%')
+    .backgroundColor(UiTokens.pageBackground);
   }
 }

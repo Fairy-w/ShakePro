@@ -2,6 +2,7 @@ import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
 import { UiTokens } from '../../../common/constants/UiTokens';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 import { RecipeDetailHeader } from '../components/RecipeDetailHeader';
 import { RecipeFlavorSection } from '../components/RecipeFlavorSection';
 import { RecipeHeroCard } from '../components/RecipeHeroCard';
@@ -89,11 +90,7 @@ export struct RecipeDetailPage {
       }
     }
 
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-
-    return '加载鸡尾酒详情失败，请稍后重试';
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, '加载鸡尾酒详情失败，请稍后重试');
   }
 
   private resolveTraceId(error: Object): string {
@@ -114,11 +111,7 @@ export struct RecipeDetailPage {
       return '登录已失效，请重新登录后再收藏';
     }
 
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-
-    return fallbackMessage;
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, fallbackMessage);
   }
 
   private async hasAuthorization(): Promise<boolean> {
@@ -153,7 +146,7 @@ export struct RecipeDetailPage {
 
     if (!routeCocktailId || !this.isNumericId(routeCocktailId)) {
       this.isLoading = false;
-      this.errorMessage = '缺少有效的鸡尾酒 ID，请从酒单页重新进入';
+      this.errorMessage = '页面信息异常，请从酒单页重新进入';
       return;
     }
 
@@ -182,7 +175,7 @@ export struct RecipeDetailPage {
 
     const cocktailId = this.resolveRouteCocktailId();
     if (!cocktailId || !this.isNumericId(cocktailId)) {
-      promptAction.showToast({ message: '缺少有效的鸡尾酒 ID，暂时无法收藏' });
+      promptAction.showToast({ message: '页面信息异常，暂时无法收藏' });
       return;
     }
 
@@ -251,7 +244,7 @@ export struct RecipeDetailPage {
         .fontWeight(FontWeight.Medium)
         .fontColor(UiTokens.textSecondary);
 
-      Text('已连接后端接口，正在同步这杯酒的风味、材料和步骤。')
+      Text('正在同步这杯酒的风味、材料和步骤。')
         .fontSize(12)
         .fontColor(UiTokens.textTertiary)
         .textAlign(TextAlign.Center)
@@ -279,7 +272,7 @@ export struct RecipeDetailPage {
         .textAlign(TextAlign.Center);
 
       if (this.traceId.length > 0) {
-        Text(`traceId: ${this.traceId}`)
+        Text(`问题编号：${this.traceId}`)
           .fontSize(11)
           .fontColor(UiTokens.textTertiary)
           .textAlign(TextAlign.Center);

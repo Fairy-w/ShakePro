@@ -1,5 +1,6 @@
 import { aiRepository } from '../repository/AiRepository';
 import { AiGenerateRecipeResponse } from '../model/AiGenerateRecipeResponse';
+import { toUserFacingMessage } from '../../../common/network/ApiResponse';
 
 type SessionListener = () => void;
 
@@ -29,7 +30,7 @@ const INITIAL_MESSAGE_LIST: ChatMessage[] = [
   {
     id: 'm1',
     role: 'ai',
-    content: '你好，我是 AI 调酒助手。直接输入口味、基酒、场景或预算，我会调用真实接口生成配方。',
+    content: '你好，我是 AI 调酒助手。直接输入口味、基酒、场景或预算，我会为你生成配方建议。',
     time: '20:36'
   }
 ];
@@ -109,7 +110,7 @@ class AICocktailSessionStore {
       {
         id: pendingMessageId,
         role: 'ai',
-        content: '正在请求 AI 生成真实配方，请稍候...',
+        content: '正在为你生成配方，请稍候...',
         time: currentTime
       }
     ];
@@ -153,7 +154,7 @@ class AICocktailSessionStore {
         messageList: this.replaceMessage(this.snapshot.messageList, pendingMessageId, {
           id: pendingMessageId,
           role: 'ai',
-          content: `生成失败：${message}`,
+          content: message,
           time: this.getCurrentTimeText()
         })
       };
@@ -178,10 +179,7 @@ class AICocktailSessionStore {
   private resolveErrorMessage(error: Object, fallbackMessage: string = '生成配方失败'): string {
     const errorObject = error as Record<string, Object>;
     const message = errorObject['message'];
-    if (typeof message === 'string' && message.trim().length > 0) {
-      return message;
-    }
-    return fallbackMessage;
+    return toUserFacingMessage(typeof message === 'string' ? message : undefined, fallbackMessage);
   }
 
   private createMessageId(prefix: string): string {

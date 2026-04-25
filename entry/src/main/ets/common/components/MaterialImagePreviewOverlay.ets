@@ -65,7 +65,7 @@ export struct MaterialImagePreviewOverlay {
         .layoutWeight(1)
         .objectFit(ImageFit.Contain)
         .borderRadius(26)
-        .backgroundColor(UiTokens.surfacePrimary)
+        .backgroundColor('#000000')
         .onClick(() => {
         });
     } else {
@@ -79,12 +79,12 @@ export struct MaterialImagePreviewOverlay {
       Text(this.emptyTitle)
         .fontSize(18)
         .fontWeight(FontWeight.Bold)
-        .fontColor(UiTokens.textPrimary)
+        .fontColor(UiTokens.textInverse)
         .textAlign(TextAlign.Center);
 
       Text(this.emptyDescription)
         .fontSize(12)
-        .fontColor(UiTokens.textSecondary)
+        .fontColor('#CACACA')
         .lineHeight(18)
         .textAlign(TextAlign.Center)
         .maxLines(2);
@@ -93,9 +93,9 @@ export struct MaterialImagePreviewOverlay {
     .layoutWeight(1)
     .justifyContent(FlexAlign.Center)
     .padding({ left: 20, right: 20 })
-    .backgroundColor(UiTokens.surfacePrimary)
+    .backgroundColor('#111111')
     .borderRadius(26)
-    .border({ width: 1, color: UiTokens.borderPrimary })
+    .border({ width: 1, color: '#2F2F2F' })
     .onClick(() => {
     });
     }
@@ -106,7 +106,7 @@ export struct MaterialImagePreviewOverlay {
       Column()
         .width('100%')
         .height('100%')
-        .backgroundColor(UiTokens.overlayMask)
+        .backgroundColor('#000000F2')
         .onClick(() => {
           this.onClose();
         });
@@ -122,7 +122,7 @@ export struct MaterialImagePreviewOverlay {
 
             Text(this.subtitle)
               .fontSize(12)
-              .fontColor(UiTokens.primarySoft);
+              .fontColor('#CACACA');
           }
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start);
@@ -131,8 +131,9 @@ export struct MaterialImagePreviewOverlay {
             .height(38)
             .fontSize(13)
             .fontWeight(FontWeight.Medium)
-            .fontColor(UiTokens.textPrimary)
-            .backgroundColor(UiTokens.accentWarmSoft)
+            .fontColor(UiTokens.textInverse)
+            .backgroundColor('#1F1F1F')
+            .border({ width: 1, color: '#353535' })
             .padding({ left: 14, right: 14 })
             .onClick(() => {
               this.onClose();
@@ -157,6 +158,7 @@ export struct MaterialImagePreviewOverlay {
       }
       .width('100%')
       .height('100%')
+      .backgroundColor('#000000')
       .padding({ left: 16, right: 16, top: 28, bottom: 28 });
     }
     .width('100%')

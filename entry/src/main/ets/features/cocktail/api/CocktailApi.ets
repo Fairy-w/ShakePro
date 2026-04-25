@@ -1,13 +1,13 @@
-import { COCKTAILS_PATH } from '../../../common/constants/ApiConfig';
+import { COCKTAILS_PATH, RECOMMEND_COCKTAILS_PATH } from '../../../common/constants/ApiConfig';
 import { ApiResponse } from '../../../common/network/ApiResponse';
 import { httpClient, HttpRequestOptions } from '../../../common/network/HttpClient';
 import {
-  CocktailBannerDto,
   CocktailCategoryDto,
   CocktailDetailDto,
   CocktailPageDto,
   CocktailPageQuery
 } from '../model/CocktailDetailModels';
+import { RecommendCocktailPayloadDto, RecommendCocktailRequest } from '../model/CocktailRecommendModels';
 
 class CocktailApi {
   getCocktailPage(query: CocktailPageQuery = {}): Promise<ApiResponse<CocktailPageDto>> {
@@ -29,18 +29,20 @@ class CocktailApi {
     return httpClient.get<CocktailDetailDto>(`${COCKTAILS_PATH}/${id}`, options);
   }
 
-  getCocktailBanner(): Promise<ApiResponse<CocktailBannerDto[]>> {
-    const options: HttpRequestOptions = {
-      attachToken: true
-    };
-    return httpClient.get<CocktailBannerDto[]>(`${COCKTAILS_PATH}/banner`, options);
-  }
-
   getCocktailCategories(): Promise<ApiResponse<CocktailCategoryDto[]>> {
     const options: HttpRequestOptions = {
       attachToken: true
     };
     return httpClient.get<CocktailCategoryDto[]>(`${COCKTAILS_PATH}/categories`, options);
+  }
+
+
+  getRecommendedCocktails(data: RecommendCocktailRequest): Promise<ApiResponse<RecommendCocktailPayloadDto>> {
+    const options: HttpRequestOptions = {
+      data,
+      attachToken: true
+    };
+    return httpClient.post<RecommendCocktailPayloadDto>(RECOMMEND_COCKTAILS_PATH, options);
   }
 }
 
