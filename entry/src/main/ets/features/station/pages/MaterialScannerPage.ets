@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -11,30 +12,10 @@ import {
   resolveMaterialPreviewImageUrl
 } from '../../../common/components/MaterialImagePreviewOverlay';
 import { sessionStore } from '../../../common/storage/SessionStore';
-import { MaterialDraft } from '../model/BartendingStationMockData';
+import { MaterialDraft } from '../model/StationMaterialModels';
 import { saveMaterialDraft } from '../model/MaterialStationStore';
 import { stationMaterialRepository } from '../repository/StationMaterialRepository';
-
-interface ScanResult {
-  originalValue: string;
-}
-
-interface Position {
-  x: number;
-  y: number;
-}
-
-interface ScanOptions {
-  scanTypes: scanCore.ScanType[];
-  enableMultiMode: boolean;
-  enableAlbum: boolean;
-}
-
-interface ViewControl {
-  width: number;
-  height: number;
-  surfaceId: string;
-}
+import { Position, ScanOptions, ScanResult, ViewControl } from '../model/ScannerViewModels';
 
 @Entry
 @Component
@@ -108,7 +89,7 @@ export struct MaterialScannerPage {
 
   private navigateToLogin(message: string): void {
     promptAction.showToast({ message });
-    router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+    router.pushUrl({ url: RoutePaths.LOGIN });
   }
 
   private getPrimaryScanButtonText(): string {
@@ -420,7 +401,7 @@ export struct MaterialScannerPage {
       this.scannerStatus = message;
       promptAction.showToast({ message });
       if (this.shouldRedirectToLogin(error as Object)) {
-        router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+        router.pushUrl({ url: RoutePaths.LOGIN });
       }
     } finally {
       this.requestBusy = false;
@@ -473,7 +454,7 @@ export struct MaterialScannerPage {
       const message = this.resolveErrorMessage(error as Object, '保存材料失败，请稍后再试');
       promptAction.showToast({ message });
       if (this.shouldRedirectToLogin(error as Object)) {
-        router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+        router.pushUrl({ url: RoutePaths.LOGIN });
       }
     } finally {
       this.requestBusy = false;
@@ -588,8 +569,7 @@ export struct MaterialScannerPage {
             .width(250)
             .height(150)
             .borderRadius(24)
-            .border({ width: 2, color: UiTokens.borderWarm })
-            .backgroundColor(UiTokens.surfaceOverlay);
+            .border({ width: 2, color: UiTokens.borderWarm });
 
           Row()
             .width(206)
@@ -750,7 +730,7 @@ export struct MaterialScannerPage {
           .backgroundColor(UiTokens.primarySoft)
           .enabled(!this.requestBusy)
           .onClick(() => {
-            router.pushUrl({ url: 'features/station/pages/MaterialLibraryPage' }, 3000);
+            router.pushUrl({ url: RoutePaths.MATERIAL_LIBRARY }, 3000);
           });
       }
       .width('100%');

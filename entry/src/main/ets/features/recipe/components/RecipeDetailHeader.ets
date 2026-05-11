@@ -5,7 +5,7 @@ export struct RecipeDetailHeader {
   @Prop isBookmarkBusy: boolean = false;
   onBack: () => void = () => {};
   onToggleBookmark: () => void = () => {};
-  onShowMockHint: () => void = () => {};
+  onShowFallbackHint: () => void = () => {};
 
   @Builder
   private buildTopBar() {
@@ -53,7 +53,7 @@ export struct RecipeDetailHeader {
   }
 
   @Builder
-  private buildMockBanner() {
+  private buildFallbackBanner() {
     Row({ space: 12 }) {
       Column()
         .width(10)
@@ -86,7 +86,7 @@ export struct RecipeDetailHeader {
         .backgroundColor(UiTokens.accentWarmSoft)
         .borderRadius(14)
         .onClick(() => {
-          this.onShowMockHint();
+          this.onShowFallbackHint();
         });
     }
     .width('100%')
@@ -100,7 +100,7 @@ export struct RecipeDetailHeader {
   build() {
     Column({ space: 18 }) {
       this.buildTopBar();
-      this.buildMockBanner();
+      this.buildFallbackBanner();
     }
     .width('100%');
   }

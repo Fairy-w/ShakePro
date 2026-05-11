@@ -1,4 +1,4 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppLogger } from '../../../core/logging/AppLogger';
 import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
 import { cocktailApi } from '../api/CocktailApi';
 import {
@@ -15,14 +15,11 @@ import {
   toRecommendCocktailCardModel
 } from '../model/CocktailRecommendModels';
 
-const COCKTAIL_REPO_LOG_DOMAIN: number = 0x0000;
 const COCKTAIL_REPO_LOG_TAG: string = 'ShakeProCocktailRepo';
 
 class CocktailRepository {
   async getCocktailPage(query: CocktailPageQuery = {}): Promise<CocktailPageDto> {
-    hilog.info(
-      COCKTAIL_REPO_LOG_DOMAIN,
-      COCKTAIL_REPO_LOG_TAG,
+    AppLogger.info(COCKTAIL_REPO_LOG_TAG,
       'get cocktail page page=%{public}d size=%{public}d keyword=%{public}s',
       query.page ?? 0,
       query.size ?? 20,
@@ -33,9 +30,7 @@ class CocktailRepository {
   }
 
   async getCocktailDetail(id: number | string): Promise<CocktailDetailDto> {
-    hilog.info(
-      COCKTAIL_REPO_LOG_DOMAIN,
-      COCKTAIL_REPO_LOG_TAG,
+    AppLogger.info(COCKTAIL_REPO_LOG_TAG,
       'get cocktail detail id=%{public}s',
       String(id)
     );
@@ -44,16 +39,14 @@ class CocktailRepository {
   }
 
   async getCocktailCategories(): Promise<CocktailCategoryDto[]> {
-    hilog.info(COCKTAIL_REPO_LOG_DOMAIN, COCKTAIL_REPO_LOG_TAG, 'get cocktail categories');
+    AppLogger.info(COCKTAIL_REPO_LOG_TAG, 'get cocktail categories');
     const response = await cocktailApi.getCocktailCategories();
     return this.unwrapResponse<CocktailCategoryDto[]>(response, '获取鸡尾酒分类失败');
   }
 
 
   async getRecommendedCocktails(request: RecommendCocktailRequest): Promise<RecommendCocktailCardModel[]> {
-    hilog.info(
-      COCKTAIL_REPO_LOG_DOMAIN,
-      COCKTAIL_REPO_LOG_TAG,
+    AppLogger.info(COCKTAIL_REPO_LOG_TAG,
       'get recommend cocktails seedId=%{public}d topk=%{public}d offset=%{public}d',
       request.seedId,
       request.topk ?? 3,
@@ -74,9 +67,7 @@ class CocktailRepository {
 
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     if (!isApiSuccess(response) || response.data === undefined || response.data === null) {
-      hilog.error(
-        COCKTAIL_REPO_LOG_DOMAIN,
-        COCKTAIL_REPO_LOG_TAG,
+      AppLogger.error(COCKTAIL_REPO_LOG_TAG,
         'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
         String(response.code),
         response.message ?? '',

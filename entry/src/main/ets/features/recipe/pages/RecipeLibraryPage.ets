@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
 import router from '@ohos.router';
@@ -282,7 +283,7 @@ export struct RecipeLibraryPage {
 
   private openRecipeDetail(item: CocktailListItemDto): void {
     router.pushUrl({
-      url: 'features/recipe/pages/RecipeDetailPage',
+      url: RoutePaths.RECIPE_DETAIL,
       params: {
         cocktailId: item.id
       }

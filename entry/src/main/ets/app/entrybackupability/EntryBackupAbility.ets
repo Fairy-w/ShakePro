@@ -1,12 +1,14 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BackupExtensionAbility, BundleVersion } from '@kit.CoreFileKit';
+import { AppLogger } from '../../core/logging/AppLogger';
+
+const ENTRY_BACKUP_LOG_TAG: string = 'ShakeProEntryBackup';
 
 export default class EntryBackupAbility extends BackupExtensionAbility {
   async onBackup() {
-    hilog.info(0x0000, 'testTag', 'onBackup ok');
+    AppLogger.info(ENTRY_BACKUP_LOG_TAG, 'onBackup ok');
   }
 
   async onRestore(bundleVersion: BundleVersion) {
-    hilog.info(0x0000, 'testTag', 'onRestore ok %{public}s', JSON.stringify(bundleVersion));
+    AppLogger.info(ENTRY_BACKUP_LOG_TAG, 'onRestore ok %{public}s', JSON.stringify(bundleVersion));
   }
 }

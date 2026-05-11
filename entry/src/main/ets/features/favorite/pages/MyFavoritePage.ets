@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -126,7 +127,7 @@ export struct MyFavoritePage {
 
   private openSystemFavoriteDetail(item: CocktailListItemDto): void {
     router.pushUrl({
-      url: 'features/recipe/pages/RecipeDetailPage',
+      url: RoutePaths.RECIPE_DETAIL,
       params: {
         cocktailId: item.id
       }
@@ -389,7 +390,7 @@ export struct MyFavoritePage {
         .backgroundColor(UiTokens.accentWarm)
         .borderRadius(16)
         .onClick(() => {
-          router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+          router.pushUrl({ url: RoutePaths.LOGIN });
         });
     }
     .width('100%')
@@ -479,9 +480,9 @@ export struct MyFavoritePage {
         .borderRadius(15)
         .onClick(() => {
           if (this.activeTab === SYSTEM_FAVORITE_TAB) {
-            router.pushUrl({ url: 'features/recipe/pages/RecipeLibraryPage' });
+            router.pushUrl({ url: RoutePaths.RECIPE_LIBRARY });
           } else {
-            router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' });
+            router.pushUrl({ url: RoutePaths.AI_COCKTAIL });
           }
         });
     }

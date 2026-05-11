@@ -1,4 +1,4 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppLogger } from '../../../core/logging/AppLogger';
 import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
 import { CocktailListItemDto } from '../../cocktail/model/CocktailDetailModels';
 import { favoriteApi } from '../api/FavoriteApi';
@@ -10,20 +10,17 @@ import {
   SaveAiCocktailFavoriteRequest
 } from '../model/FavoriteAiCocktailModels';
 
-const FAVORITE_REPO_LOG_DOMAIN: number = 0x0000;
 const FAVORITE_REPO_LOG_TAG: string = 'ShakeProFavoriteRepo';
 
 class FavoriteRepository {
   async getSystemFavoriteList(): Promise<CocktailListItemDto[]> {
-    hilog.info(FAVORITE_REPO_LOG_DOMAIN, FAVORITE_REPO_LOG_TAG, 'get system favorite list');
+    AppLogger.info(FAVORITE_REPO_LOG_TAG, 'get system favorite list');
     const response = await favoriteApi.getSystemFavoriteList();
     return this.unwrapListResponse<CocktailListItemDto>(response, '获取系统收藏失败');
   }
 
   async addSystemFavorite(cocktailId: number | string): Promise<void> {
-    hilog.info(
-      FAVORITE_REPO_LOG_DOMAIN,
-      FAVORITE_REPO_LOG_TAG,
+    AppLogger.info(FAVORITE_REPO_LOG_TAG,
       'add system favorite cocktailId=%{public}s',
       String(cocktailId)
     );
@@ -32,9 +29,7 @@ class FavoriteRepository {
   }
 
   async removeSystemFavorite(cocktailId: number | string): Promise<void> {
-    hilog.info(
-      FAVORITE_REPO_LOG_DOMAIN,
-      FAVORITE_REPO_LOG_TAG,
+    AppLogger.info(FAVORITE_REPO_LOG_TAG,
       'remove system favorite cocktailId=%{public}s',
       String(cocktailId)
     );
@@ -43,9 +38,7 @@ class FavoriteRepository {
   }
 
   async saveAiCocktail(data: SaveAiCocktailFavoriteRequest): Promise<FavoriteAiCocktailMutationResponse> {
-    hilog.info(
-      FAVORITE_REPO_LOG_DOMAIN,
-      FAVORITE_REPO_LOG_TAG,
+    AppLogger.info(FAVORITE_REPO_LOG_TAG,
       'save ai cocktail favorite recipeKey=%{public}s name=%{public}s',
       data.recipeKey ?? '',
       data.name
@@ -55,15 +48,13 @@ class FavoriteRepository {
   }
 
   async deleteAiCocktailById(favoriteId: number): Promise<FavoriteAiCocktailMutationResponse> {
-    hilog.info(FAVORITE_REPO_LOG_DOMAIN, FAVORITE_REPO_LOG_TAG, 'delete favorite by id=%{public}d', favoriteId);
+    AppLogger.info(FAVORITE_REPO_LOG_TAG, 'delete favorite by id=%{public}d', favoriteId);
     const response = await favoriteApi.deleteAiCocktailById(favoriteId);
     return this.unwrapResponse<FavoriteAiCocktailMutationResponse>(response, '取消收藏失败');
   }
 
   async deleteAiCocktailByRecipeKey(recipeKey: string): Promise<FavoriteAiCocktailMutationResponse> {
-    hilog.info(
-      FAVORITE_REPO_LOG_DOMAIN,
-      FAVORITE_REPO_LOG_TAG,
+    AppLogger.info(FAVORITE_REPO_LOG_TAG,
       'delete favorite by recipeKey=%{public}s',
       recipeKey
     );
@@ -72,9 +63,7 @@ class FavoriteRepository {
   }
 
   async getAiCocktailList(query: FavoriteAiCocktailListQuery): Promise<FavoriteAiCocktailListResponse> {
-    hilog.info(
-      FAVORITE_REPO_LOG_DOMAIN,
-      FAVORITE_REPO_LOG_TAG,
+    AppLogger.info(FAVORITE_REPO_LOG_TAG,
       'get ai cocktail list pageNo=%{public}s pageSize=%{public}s keyword=%{public}s',
       String(query.pageNo ?? 1),
       String(query.pageSize ?? 10),
@@ -98,9 +87,7 @@ class FavoriteRepository {
     if (isApiSuccess(response)) {
       return;
     }
-    hilog.error(
-      FAVORITE_REPO_LOG_DOMAIN,
-      FAVORITE_REPO_LOG_TAG,
+    AppLogger.error(FAVORITE_REPO_LOG_TAG,
       'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
       String(response.code),
       response.message ?? '',
@@ -116,9 +103,7 @@ class FavoriteRepository {
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     this.ensureSuccess(response, fallbackMessage);
     if (response.data === undefined || response.data === null) {
-      hilog.error(
-        FAVORITE_REPO_LOG_DOMAIN,
-        FAVORITE_REPO_LOG_TAG,
+      AppLogger.error(FAVORITE_REPO_LOG_TAG,
         'api data missing after success code=%{public}s message=%{public}s traceId=%{public}s',
         String(response.code),
         response.message ?? '',

@@ -1,15 +1,4 @@
-export const API_BASE_URL: string = 'http://172.20.10.3:8080';
-// 手机热点： 172.20.10.3
-// CDU：10.7.123.71
-// 唱吧： 172.25.12.162
-export const API_TIMEOUT_MS: number = 10000;
-export const API_FALLBACK_TIMEOUT_MS: number = 2500;
-export const API_MAX_RETRY_COUNT: number = 0;
-export const API_BASE_URL_CANDIDATES: string[] = [
-  API_BASE_URL,
-  'http://api.shakepro.local:8080'
-];
-export const OSS_PUBLIC_BASE_URL: string = '';
+import { API_BASE_URL, OSS_PUBLIC_BASE_URL } from '../../core/env/AppEnv';
 
 export const DEFAULT_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',

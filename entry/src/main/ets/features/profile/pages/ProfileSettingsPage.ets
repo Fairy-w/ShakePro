@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -5,7 +6,7 @@ import { UiTokens } from '../../../common/constants/UiTokens';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { authRepository } from '../../auth/repository/AuthRepository';
 import { ProfileMenuSection } from '../components/ProfileMenuSection';
-import { PROFILE_SETTING_ITEMS } from '../model/ProfileMockData';
+import { PROFILE_SETTING_ITEMS } from '../model/ProfileStaticData';
 
 @Entry({ routeName: 'ProfileSettingsPage' })
 @Component
@@ -22,7 +23,7 @@ export struct ProfileSettingsPage {
     try {
       await sessionStore.init(this.getHostContext());
       await authRepository.logout();
-      router.replaceUrl({ url: 'features/auth/pages/LoginPage' }, 3000);
+      router.replaceUrl({ url: RoutePaths.LOGIN }, 3000);
     } catch (error) {
       this.showActionToast('退出登录失败，请稍后再试');
     }

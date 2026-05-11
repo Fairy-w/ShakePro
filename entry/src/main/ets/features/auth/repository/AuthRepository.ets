@@ -1,4 +1,4 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppLogger } from '../../../core/logging/AppLogger';
 import { getApiMessage, HttpRequestError, ApiResponse, isApiSuccess } from '../../../common/network/ApiResponse';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { authApi } from '../api/AuthApi';
@@ -6,19 +6,18 @@ import { LoginRequest } from '../model/LoginRequest';
 import { LoginResponse } from '../model/LoginResponse';
 import { RegisterRequest } from '../model/RegisterRequest';
 import { UserInfo } from '../model/UserInfo';
-const AUTH_REPO_LOG_DOMAIN: number = 0x0000;
 const AUTH_REPO_LOG_TAG: string = 'ShakeProAuthRepo';
 class AuthRepository {
   async register(data: RegisterRequest): Promise<UserInfo> {
-    hilog.info(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'register called username=%{public}s nickname=%{public}s', data.username, data.nickname ?? '');
+    AppLogger.info(AUTH_REPO_LOG_TAG, 'register called username=%{public}s nickname=%{public}s', data.username, data.nickname ?? '');
     const response = await authApi.register(data);
     return this.unwrapResponse<UserInfo>(response, '注册失败，请稍后重试');
   }
   async login(data: LoginRequest): Promise<LoginResponse> {
-    hilog.info(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'login called username=%{public}s', data.username);
+    AppLogger.info(AUTH_REPO_LOG_TAG, 'login called username=%{public}s', data.username);
     const response = await authApi.login(data);
     const loginResult = this.unwrapResponse<LoginResponse>(response, '登录失败，请稍后重试');
-    hilog.info(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'login success username=%{public}s tokenType=%{public}s expireSeconds=%{public}s', data.username, loginResult.tokenType, String(loginResult.expireSeconds));
+    AppLogger.info(AUTH_REPO_LOG_TAG, 'login success username=%{public}s tokenType=%{public}s expireSeconds=%{public}s', data.username, loginResult.tokenType, String(loginResult.expireSeconds));
     await sessionStore.saveSession({
       accessToken: loginResult.token,
       tokenType: loginResult.tokenType,
@@ -38,7 +37,7 @@ class AuthRepository {
   }
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     if (!isApiSuccess(response) || response.data === undefined || response.data === null) {
-      hilog.error(AUTH_REPO_LOG_DOMAIN, AUTH_REPO_LOG_TAG, 'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s', String(response.code), response.message ?? '', response.traceId ?? '');
+      AppLogger.error(AUTH_REPO_LOG_TAG, 'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s', String(response.code), response.message ?? '', response.traceId ?? '');
       throw new HttpRequestError({
         message: getApiMessage(response, fallbackMessage),
         code: response.code,

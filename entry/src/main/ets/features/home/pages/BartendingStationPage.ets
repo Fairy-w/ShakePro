@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import common from '@ohos.app.ability.common';
@@ -8,7 +9,7 @@ import {
   resolveMaterialPreviewImageUrl
 } from '../../../common/components/MaterialImagePreviewOverlay';
 import { toUserFacingMessage } from '../../../common/network/ApiResponse';
-import { MaterialRecord } from '../../station/model/BartendingStationMockData';
+import { MaterialRecord } from '../../station/model/StationMaterialModels';
 import {
   getRecordedMaterials,
   removeRecordedMaterialById,
@@ -16,18 +17,7 @@ import {
 } from '../../station/model/MaterialStationStore';
 import { stationMaterialRepository } from '../../station/repository/StationMaterialRepository';
 import { sessionStore } from '../../../common/storage/SessionStore';
-
-interface InventoryTab {
-  id: string;
-  title: string;
-}
-
-const INVENTORY_TABS: InventoryTab[] = [
-  { id: 'all', title: '全部' },
-  { id: 'base_liquor', title: '基底 / 酒类' },
-  { id: 'fruit_flavor', title: '水果 / 调味' },
-  { id: 'garnish_spice', title: '装饰 / 香料' }
-];
+import { InventoryTab, INVENTORY_TABS } from '../../station/model/StationInventoryFilters';
 
 @Component
 export struct BartendingStationPage {
@@ -793,12 +783,12 @@ export struct BartendingStationPage {
 
       this.buildAddEntryAction('扫码添加', '调起相机后自动识别条码，一键存入调酒台。', UiTokens.primary, UiTokens.pageAccentMint, () => {
         this.showAddSheet = false;
-        router.pushUrl({ url: 'features/station/pages/MaterialScannerPage' }, 3000);
+        router.pushUrl({ url: RoutePaths.MATERIAL_SCANNER }, 3000);
       });
 
       this.buildAddEntryAction('手动挑选', '进入材料百科进行多选，适合水果、调味和装饰材料。', UiTokens.primary, UiTokens.primarySoft, () => {
         this.showAddSheet = false;
-        router.pushUrl({ url: 'features/station/pages/MaterialLibraryPage' }, 3000);
+        router.pushUrl({ url: RoutePaths.MATERIAL_LIBRARY }, 3000);
       });
 
       Button('取消', { type: ButtonType.Capsule })

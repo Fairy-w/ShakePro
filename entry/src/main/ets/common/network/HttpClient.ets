@@ -1,15 +1,17 @@
 import axios from '@ohos/axios';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
   API_FALLBACK_TIMEOUT_MS,
   API_MAX_RETRY_COUNT,
   API_TIMEOUT_MS,
-  API_BASE_URL_CANDIDATES,
+  API_BASE_URL_CANDIDATES
+} from '../../core/env/AppEnv';
+import {
   DEFAULT_HEADERS,
   buildApiUrl,
   buildApiUrlWithBase,
   isAbsoluteUrl
 } from '../constants/ApiConfig';
+import { AppLogger } from '../../core/logging/AppLogger';
 import { ApiResponse, HttpRequestError, HttpErrorPayload, toUserFacingMessage } from './ApiResponse';
 import { sessionStore } from '../storage/SessionStore';
 
@@ -34,7 +36,6 @@ interface AxiosHttpResponse {
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 
-const HTTP_LOG_DOMAIN: number = 0x0000;
 const HTTP_LOG_TAG: string = 'ShakeProHttp';
 
 class HttpClient {
@@ -68,8 +69,7 @@ class HttpClient {
       const attemptTimeout = attempt === 0 ? timeoutMs : Math.min(timeoutMs, API_FALLBACK_TIMEOUT_MS);
 
       try {
-        hilog.info(
-          HTTP_LOG_DOMAIN,
+        AppLogger.info(
           HTTP_LOG_TAG,
           'request start method=%{public}s path=%{public}s url=%{public}s attachToken=%{public}s skipAuthorization=%{public}s attempt=%{public}d headers=%{public}s body=%{public}s',
           method,
@@ -90,8 +90,7 @@ class HttpClient {
           validateStatus: (status: number): boolean => true
         }) as AxiosHttpResponse;
 
-        hilog.info(
-          HTTP_LOG_DOMAIN,
+        AppLogger.info(
           HTTP_LOG_TAG,
           'request done method=%{public}s path=%{public}s status=%{public}d raw=%{public}s',
           method,
@@ -108,8 +107,7 @@ class HttpClient {
         if (body && typeof body === 'object') {
           const apiResponse = body as ApiResponse<T>;
           if (apiResponse.code !== undefined && apiResponse.message !== undefined) {
-            hilog.info(
-              HTTP_LOG_DOMAIN,
+            AppLogger.info(
               HTTP_LOG_TAG,
               'api response path=%{public}s code=%{public}d message=%{public}s traceId=%{public}s',
               path,
@@ -128,8 +126,7 @@ class HttpClient {
         } as ApiResponse<T>;
       } catch (error) {
         lastError = error as Object;
-        hilog.error(
-          HTTP_LOG_DOMAIN,
+        AppLogger.error(
           HTTP_LOG_TAG,
           'request failed method=%{public}s path=%{public}s url=%{public}s attempt=%{public}d error=%{public}s',
           method,
@@ -143,8 +140,7 @@ class HttpClient {
           throw this.normalizeError(error as Object);
         }
 
-        hilog.warn(
-          HTTP_LOG_DOMAIN,
+        AppLogger.warn(
           HTTP_LOG_TAG,
           'switch backend and retry path=%{public}s nextAttempt=%{public}d',
           path,
@@ -345,7 +341,7 @@ class HttpClient {
     try {
       await sessionStore.setApiBaseUrl(baseUrl);
     } catch (_error) {
-      hilog.warn(HTTP_LOG_DOMAIN, HTTP_LOG_TAG, 'store preferred base url failed baseUrl=%{public}s', baseUrl);
+      AppLogger.warn(HTTP_LOG_TAG, 'store preferred base url failed baseUrl=%{public}s', baseUrl);
     }
   }
 

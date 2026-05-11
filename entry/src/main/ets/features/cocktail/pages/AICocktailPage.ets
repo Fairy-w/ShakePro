@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import common from '@ohos.app.ability.common';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
@@ -295,7 +296,7 @@ export struct AICocktailPage {
 
     if (!(await this.hasAuthorization())) {
       promptAction.showToast({ message: '请先登录后再收藏' });
-      router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+      router.pushUrl({ url: RoutePaths.LOGIN });
       return;
     }
 

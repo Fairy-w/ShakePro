@@ -1,6 +1,6 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppLogger } from '../../../core/logging/AppLogger';
 import { ApiResponse, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
-import { MaterialDraft, SelectableMaterial } from '../model/BartendingStationMockData';
+import { MaterialDraft, SelectableMaterial } from '../model/StationMaterialModels';
 import { stationMaterialApi } from '../api/StationMaterialApi';
 import {
   BarcodeLookupRequest,
@@ -21,7 +21,6 @@ import {
   toSelectableMaterial
 } from '../model/StationMaterialApiModels';
 
-const STATION_MATERIAL_REPO_LOG_DOMAIN: number = 0x0000;
 const STATION_MATERIAL_REPO_LOG_TAG: string = 'ShakeProStationMaterialRepo';
 const BARCODE_PARAM_ERROR_CODE: number = 40001;
 const BARCODE_NOT_FOUND_CODE: number = 40410;
@@ -33,9 +32,7 @@ class StationMaterialRepository {
     const normalizedRequest = this.normalizeLookupRequest(request);
     this.ensureBarcode(normalizedRequest.barcode);
 
-    hilog.info(
-      STATION_MATERIAL_REPO_LOG_DOMAIN,
-      STATION_MATERIAL_REPO_LOG_TAG,
+    AppLogger.info(STATION_MATERIAL_REPO_LOG_TAG,
       'lookup barcode=%{public}s locale=%{public}s',
       normalizedRequest.barcode,
       normalizedRequest.locale ?? ''
@@ -69,9 +66,7 @@ class StationMaterialRepository {
     const payload = this.buildScannedSavePayload(draft);
     this.ensureBarcode(payload.barcode);
 
-    hilog.info(
-      STATION_MATERIAL_REPO_LOG_DOMAIN,
-      STATION_MATERIAL_REPO_LOG_TAG,
+    AppLogger.info(STATION_MATERIAL_REPO_LOG_TAG,
       'save scanned material name=%{public}s barcode=%{public}s hasItem=%{public}s',
       payload.name ?? '',
       payload.barcode,
@@ -86,9 +81,7 @@ class StationMaterialRepository {
   async saveManualMaterial(draft: MaterialDraft): Promise<MaterialDraft> {
     const payload = this.buildManualSavePayload(draft);
 
-    hilog.info(
-      STATION_MATERIAL_REPO_LOG_DOMAIN,
-      STATION_MATERIAL_REPO_LOG_TAG,
+    AppLogger.info(STATION_MATERIAL_REPO_LOG_TAG,
       'save manual material materialId=%{public}s hasItem=%{public}s',
       String(payload.materialId),
       String(payload.hasItem)
@@ -240,9 +233,7 @@ class StationMaterialRepository {
 
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     if (!isApiSuccess(response) || response.data === undefined || response.data === null) {
-      hilog.error(
-        STATION_MATERIAL_REPO_LOG_DOMAIN,
-        STATION_MATERIAL_REPO_LOG_TAG,
+      AppLogger.error(STATION_MATERIAL_REPO_LOG_TAG,
         'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
         String(response.code),
         response.message ?? '',

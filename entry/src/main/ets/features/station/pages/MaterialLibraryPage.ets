@@ -3,7 +3,7 @@ import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
 import { UiTokens } from '../../../common/constants/UiTokens';
 import { toUserFacingMessage } from '../../../common/network/ApiResponse';
-import { FilterTab, MaterialDraft, SelectableMaterial } from '../model/BartendingStationMockData';
+import { FilterTab, MaterialDraft, SelectableMaterial } from '../model/StationMaterialModels';
 import {
   notifyRecordedMaterialsChanged,
   saveMaterialDraft,
@@ -11,12 +11,7 @@ import {
 } from '../model/MaterialStationStore';
 import { stationMaterialRepository } from '../repository/StationMaterialRepository';
 import { sessionStore } from '../../../common/storage/SessionStore';
-
-enum OwnershipFilterType {
-  ALL = 'all',
-  OWNED = 'owned',
-  UNOWNED = 'unowned'
-}
+import { OwnershipFilterType } from '../model/StationInventoryFilters';
 
 @Entry
 @Component

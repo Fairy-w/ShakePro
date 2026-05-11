@@ -1,4 +1,4 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppLogger } from '../../../core/logging/AppLogger';
 import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
 import { fileUploadApi } from '../api/FileUploadApi';
 import {
@@ -8,14 +8,11 @@ import {
   OssPresignResponse
 } from '../model/FileUploadModels';
 
-const FILE_UPLOAD_LOG_DOMAIN: number = 0x0000;
 const FILE_UPLOAD_LOG_TAG: string = 'ShakeProFileUploadRepo';
 
 class FileUploadRepository {
   async getImageUploadPresign(data: OssPresignRequest): Promise<OssPresignResponse> {
-    hilog.info(
-      FILE_UPLOAD_LOG_DOMAIN,
-      FILE_UPLOAD_LOG_TAG,
+    AppLogger.info(FILE_UPLOAD_LOG_TAG,
       'get image upload presign filename=%{public}s contentType=%{public}s size=%{public}d',
       data.filename,
       data.contentType,
@@ -26,9 +23,7 @@ class FileUploadRepository {
   }
 
   async createFileRecord(data: FileRecordCreateRequest): Promise<FileRecordCreateResponse> {
-    hilog.info(
-      FILE_UPLOAD_LOG_DOMAIN,
-      FILE_UPLOAD_LOG_TAG,
+    AppLogger.info(FILE_UPLOAD_LOG_TAG,
       'create file record objectKey=%{public}s contentType=%{public}s size=%{public}d',
       data.objectKey,
       data.contentType,
@@ -40,9 +35,7 @@ class FileUploadRepository {
 
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     if (!isApiSuccess(response) || response.data === undefined || response.data === null) {
-      hilog.error(
-        FILE_UPLOAD_LOG_DOMAIN,
-        FILE_UPLOAD_LOG_TAG,
+      AppLogger.error(FILE_UPLOAD_LOG_TAG,
         'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
         String(response.code),
         response.message ?? '',

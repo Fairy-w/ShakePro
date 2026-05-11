@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import { UiTokens } from '../../../common/constants/UiTokens';
@@ -36,7 +37,7 @@ export struct RegisterPage {
       });
 
       this.showMessage('注册成功，请前往登录', false);
-      router.replaceUrl({ url: 'features/auth/pages/LoginPage' });
+      router.replaceUrl({ url: RoutePaths.LOGIN });
     } catch (error) {
       this.showMessage(this.resolveErrorMessage(error), true);
     } finally {
@@ -230,7 +231,7 @@ export struct RegisterPage {
               .fontWeight(FontWeight.Medium)
               .fontColor(UiTokens.textAccent)
               .onClick(() => {
-                router.replaceUrl({ url: 'features/auth/pages/LoginPage' });
+                router.replaceUrl({ url: RoutePaths.LOGIN });
               });
           }
           .width('100%')

@@ -1,4 +1,5 @@
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AppLogger } from '../../../core/logging/AppLogger';
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import common from '@ohos.app.ability.common';
 import router from '@ohos.router';
 import { UiTokens } from '../../../common/constants/UiTokens';
@@ -15,7 +16,6 @@ interface DashboardStat {
   detail: string;
 }
 
-const HOME_PAGE_LOG_DOMAIN: number = 0x0000;
 const HOME_PAGE_LOG_TAG: string = 'ShakeProHomePage';
 
 @Entry({ routeName: 'MainPage' })
@@ -110,9 +110,7 @@ export struct MainPage {
       }
     } catch (error) {
       const errorMessage: string = error instanceof Error ? error.message : JSON.stringify(error);
-      hilog.warn(
-        HOME_PAGE_LOG_DOMAIN,
-        HOME_PAGE_LOG_TAG,
+      AppLogger.warn(HOME_PAGE_LOG_TAG,
         'load favorite seeds failed error=%{public}s',
         errorMessage
       );
@@ -146,9 +144,7 @@ export struct MainPage {
         topk: this.recommendPageSize,
         offset: offset
       };
-      hilog.info(
-        HOME_PAGE_LOG_DOMAIN,
-        HOME_PAGE_LOG_TAG,
+      AppLogger.info(HOME_PAGE_LOG_TAG,
         'recommend request seedId=%{public}d topk=%{public}d offset=%{public}d',
         recommendRequest.seedId,
         recommendRequest.topk ?? this.recommendPageSize,
@@ -177,7 +173,7 @@ export struct MainPage {
 
   private openAiPage(prefillPrompt: string = this.aiPromptDraft): void {
     aiCocktailSessionStore.setInputText(prefillPrompt);
-    router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' }, 3000);
+    router.pushUrl({ url: RoutePaths.AI_COCKTAIL }, 3000);
   }
 
   private async handleStartAiRecommendation(): Promise<void> {
@@ -202,7 +198,7 @@ export struct MainPage {
     }
 
     await aiCocktailSessionStore.submitPrompt(prompt);
-    router.pushUrl({ url: 'features/cocktail/pages/AICocktailPage' }, 3000);
+    router.pushUrl({ url: RoutePaths.AI_COCKTAIL }, 3000);
   }
 
   private applyPromptSample(sample: string): void {
@@ -367,7 +363,7 @@ export struct MainPage {
           .borderRadius(18)
           .border({ width: 1, color: UiTokens.borderPrimary })
           .onClick(() => {
-            router.pushUrl({ url: 'features/recipe/pages/RecipeLibraryPage' }, 3000);
+            router.pushUrl({ url: RoutePaths.RECIPE_LIBRARY }, 3000);
           });
       }
       .width('100%');
@@ -577,7 +573,7 @@ export struct MainPage {
 
   private navigateToRecipeDetail(cocktailId: number): void {
     router.pushUrl({
-      url: 'features/recipe/pages/RecipeDetailPage',
+      url: RoutePaths.RECIPE_DETAIL,
       params: {
         cocktailId
       }

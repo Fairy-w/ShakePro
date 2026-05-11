@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import common from '@ohos.app.ability.common';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
@@ -9,7 +10,7 @@ import {
   CommunityPostPageDto,
   toCommunityPostCardModel
 } from '../../community/model/CommunityApiModels';
-import { ProfilePostPreviewItem } from '../model/ProfileMockData';
+import { ProfilePostPreviewItem } from '../model/ProfileStaticData';
 
 @Entry({ routeName: 'ProfilePostsPage' })
 @Component
@@ -102,7 +103,7 @@ export struct ProfilePostsPage {
       return;
     }
     router.pushUrl({
-      url: 'features/community/pages/CommunityPostDetailPage',
+      url: RoutePaths.COMMUNITY_DETAIL,
       params: {
         postId
       }
@@ -231,7 +232,7 @@ export struct ProfilePostsPage {
         .borderRadius(16)
         .padding({ left: 16, right: 16 })
         .onClick(() => {
-          router.pushUrl({ url: 'features/auth/pages/LoginPage' }, 3000);
+          router.pushUrl({ url: RoutePaths.LOGIN }, 3000);
         });
     }
     .width('100%')

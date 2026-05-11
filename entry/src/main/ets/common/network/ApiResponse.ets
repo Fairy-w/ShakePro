@@ -40,6 +40,9 @@ const TECHNICAL_MESSAGE_TOKENS: string[] = [
   'econn',
   'enotfound',
   'failed to connect',
+  'failed to resolve the host name',
+  'could not resolve host',
+  'resolve the host name',
   'code='
 ];
 

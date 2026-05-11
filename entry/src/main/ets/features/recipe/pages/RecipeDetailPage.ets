@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -181,7 +182,7 @@ export struct RecipeDetailPage {
 
     if (!(await this.hasAuthorization())) {
       promptAction.showToast({ message: '请先登录后再收藏' });
-      router.pushUrl({ url: 'features/auth/pages/LoginPage' });
+      router.pushUrl({ url: RoutePaths.LOGIN });
       return;
     }
 
@@ -203,7 +204,7 @@ export struct RecipeDetailPage {
     }
   }
 
-  private showMockDataHint(): void {
+  private showFallbackDataHint(): void {
     promptAction.showToast({ message: '向下滑动，继续查看材料、步骤和享用建议' });
   }
 
@@ -656,8 +657,8 @@ export struct RecipeDetailPage {
             onToggleBookmark: () => {
               void this.toggleBookmark();
             },
-            onShowMockHint: () => {
-              this.showMockDataHint();
+            onShowFallbackHint: () => {
+              this.showFallbackDataHint();
             }
           });
 

@@ -1,10 +1,11 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import common from '@ohos.app.ability.common';
 import router from '@ohos.router';
 import { UiTokens } from '../../../common/constants/UiTokens';
 import { sessionStore } from '../../../common/storage/SessionStore';
 import { ProfileHeroCard } from '../components/ProfileHeroCard';
 import { ProfileMenuSection } from '../components/ProfileMenuSection';
-import { PROFILE_OVERVIEW, PROFILE_SHORTCUTS, ProfileMenuItem } from '../model/ProfileMockData';
+import { PROFILE_OVERVIEW, PROFILE_SHORTCUTS, ProfileMenuItem } from '../model/ProfileStaticData';
 
 @Entry({ routeName: 'Mine' })
 @Component
@@ -100,11 +101,11 @@ export struct ProfilePage {
             items: this.shortcutItems,
             onItemClick: (itemId: string) => {
               if (itemId === 'favorite-page') {
-                router.pushUrl({ url: 'features/favorite/pages/MyFavoritePage' }, 3000);
+                router.pushUrl({ url: RoutePaths.FAVORITE }, 3000);
               } else if (itemId === 'my-posts') {
-                router.pushUrl({ url: 'features/profile/pages/ProfilePostsPage' }, 3000);
+                router.pushUrl({ url: RoutePaths.PROFILE_POSTS }, 3000);
               } else {
-                router.pushUrl({ url: 'features/profile/pages/ProfileSettingsPage' }, 3000);
+                router.pushUrl({ url: RoutePaths.PROFILE_SETTINGS }, 3000);
               }
             }
           });

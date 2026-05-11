@@ -1,5 +1,5 @@
 import { UiTokens } from '../../../common/constants/UiTokens';
-import { ProfileMenuItem } from '../model/ProfileMockData';
+import { ProfileMenuItem } from '../model/ProfileStaticData';
 
 @Component
 export struct ProfileMenuSection {

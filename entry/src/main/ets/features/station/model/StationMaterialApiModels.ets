@@ -1,4 +1,4 @@
-import { MaterialDraft, SelectableMaterial } from './BartendingStationMockData';
+import { MaterialDraft, SelectableMaterial } from './StationMaterialModels';
 import { buildPublicAssetUrl } from '../../../common/constants/ApiConfig';
 
 export interface BarcodeLookupRequest {

@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import { UiTokens } from '../../../common/constants/UiTokens';
 
 export interface ProfileOverviewData {
@@ -45,7 +46,7 @@ export const PROFILE_SHORTCUTS: ProfileMenuItem[] = [
     title: '我的收藏',
     subtitle: '集中查看系统酒谱收藏与 AI 收藏结果。',
     icon: $r('app.media.favorite_recipes'),
-    route: 'features/favorite/pages/MyFavoritePage',
+    route: RoutePaths.FAVORITE,
     actionKind: 'route',
     actionMessage: '',
     trailingText: '',
@@ -57,7 +58,7 @@ export const PROFILE_SHORTCUTS: ProfileMenuItem[] = [
     title: '我的帖子',
     subtitle: '查看自己已经发布过的社区笔记。',
     icon: $r('app.media.friend'),
-    route: 'features/profile/pages/ProfilePostsPage',
+    route: RoutePaths.PROFILE_POSTS,
     actionKind: 'route',
     actionMessage: '',
     trailingText: '',
@@ -69,7 +70,7 @@ export const PROFILE_SHORTCUTS: ProfileMenuItem[] = [
     title: '设置',
     subtitle: '账号、通知和退出登录都放在这里。',
     icon: $r('app.media.menu'),
-    route: 'features/profile/pages/ProfileSettingsPage',
+    route: RoutePaths.PROFILE_SETTINGS,
     actionKind: 'route',
     actionMessage: '',
     trailingText: '',

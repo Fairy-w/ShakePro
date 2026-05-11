@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 
 import { MaterialPreviewImageSource } from '../../../common/components/MaterialImagePreviewOverlay';
 
@@ -111,7 +112,7 @@ export const STATION_ACTIONS: StationAction[] = [
     actionText: '立即扫描',
     accentColor: '#1B596E',
     softColor: '#DDF5F1',
-    route: 'features/station/pages/MaterialScannerPage'
+    route: RoutePaths.MATERIAL_SCANNER
   },
   {
     id: 'library',
@@ -121,7 +122,7 @@ export const STATION_ACTIONS: StationAction[] = [
     actionText: '打开列表',
     accentColor: '#245C82',
     softColor: '#E8F5FB',
-    route: 'features/station/pages/MaterialLibraryPage'
+    route: RoutePaths.MATERIAL_LIBRARY
   }
 ];
 

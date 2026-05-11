@@ -1,6 +1,6 @@
+import { AppLogger } from '../../../core/logging/AppLogger';
 import common from '@ohos.app.ability.common';
 import axios, { AxiosRequestConfig, AxiosResponse, FormData } from '@ohos/axios';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { buildApiUrl } from '../../../common/constants/ApiConfig';
 import { ApiResponse, getApiMessage, HttpRequestError, isApiSuccess } from '../../../common/network/ApiResponse';
 import { sessionStore } from '../../../common/storage/SessionStore';
@@ -14,7 +14,6 @@ import {
   UploadCommunityImageResponse
 } from '../model/CommunityApiModels';
 
-const COMMUNITY_REPO_LOG_DOMAIN: number = 0x0000;
 const COMMUNITY_REPO_LOG_TAG: string = 'ShakeProCommunityRepo';
 
 function resolveUploadFileName(fileUri: string): string {
@@ -47,9 +46,7 @@ function resolveUploadMimeType(filename: string): string {
 
 class CommunityRepository {
   async getCommunityPosts(query: CommunityPostListQuery = {}): Promise<CommunityPostPageDto> {
-    hilog.info(
-      COMMUNITY_REPO_LOG_DOMAIN,
-      COMMUNITY_REPO_LOG_TAG,
+    AppLogger.info(COMMUNITY_REPO_LOG_TAG,
       'get community posts pageNo=%{public}d pageSize=%{public}d',
       query.pageNo ?? 1,
       query.pageSize ?? 10
@@ -59,9 +56,7 @@ class CommunityRepository {
   }
 
   async getMyCommunityPosts(query: CommunityPostListQuery = {}): Promise<CommunityPostPageDto> {
-    hilog.info(
-      COMMUNITY_REPO_LOG_DOMAIN,
-      COMMUNITY_REPO_LOG_TAG,
+    AppLogger.info(COMMUNITY_REPO_LOG_TAG,
       'get my community posts pageNo=%{public}d pageSize=%{public}d',
       query.pageNo ?? 1,
       query.pageSize ?? 10
@@ -78,9 +73,7 @@ class CommunityRepository {
       });
     }
 
-    hilog.info(
-      COMMUNITY_REPO_LOG_DOMAIN,
-      COMMUNITY_REPO_LOG_TAG,
+    AppLogger.info(COMMUNITY_REPO_LOG_TAG,
       'get community post detail postId=%{public}s',
       postId
     );
@@ -89,9 +82,7 @@ class CommunityRepository {
   }
 
   async createCommunityPost(data: CreateCommunityPostRequest): Promise<CreateCommunityPostResponse> {
-    hilog.info(
-      COMMUNITY_REPO_LOG_DOMAIN,
-      COMMUNITY_REPO_LOG_TAG,
+    AppLogger.info(COMMUNITY_REPO_LOG_TAG,
       'create community post title=%{public}s contentLength=%{public}d imageCount=%{public}d tagCount=%{public}d',
       data.title ?? '',
       data.content.length,
@@ -119,9 +110,7 @@ class CommunityRepository {
       });
     }
 
-    hilog.info(
-      COMMUNITY_REPO_LOG_DOMAIN,
-      COMMUNITY_REPO_LOG_TAG,
+    AppLogger.info(COMMUNITY_REPO_LOG_TAG,
       'upload community image uri=%{public}s',
       normalizedUri
     );
@@ -185,9 +174,7 @@ class CommunityRepository {
 
   private unwrapResponse<T>(response: ApiResponse<T>, fallbackMessage: string): T {
     if (!isApiSuccess(response) || response.data === undefined || response.data === null) {
-      hilog.error(
-        COMMUNITY_REPO_LOG_DOMAIN,
-        COMMUNITY_REPO_LOG_TAG,
+      AppLogger.error(COMMUNITY_REPO_LOG_TAG,
         'api unwrap failed code=%{public}s message=%{public}s traceId=%{public}s',
         String(response.code),
         response.message ?? '',

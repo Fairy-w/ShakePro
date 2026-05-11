@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import { UiTokens } from '../../../common/constants/UiTokens';
@@ -42,7 +43,7 @@ export struct CommunityPage {
 
   private openPostDetail(postId: string): void {
     router.pushUrl({
-      url: 'features/community/pages/CommunityPostDetailPage',
+      url: RoutePaths.COMMUNITY_DETAIL,
       params: {
         postId: postId
       }
@@ -51,7 +52,7 @@ export struct CommunityPage {
 
   private openNoteEditor(): void {
     router.pushUrl({
-      url: 'features/community/pages/CommunityNoteEditorPage'
+      url: RoutePaths.COMMUNITY_EDITOR
     }, 3000);
   }
 

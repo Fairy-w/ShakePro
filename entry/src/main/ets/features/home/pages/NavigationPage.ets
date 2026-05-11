@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import { FloatingDock } from '../../../common/components/navigation/FloatingDock';
 import { UiTokens } from '../../../common/constants/UiTokens';
 import { TabMenusInterfaceIRequired } from '../../../common/types/TabMenusInterface';
@@ -18,7 +19,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.tab_home'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
-      pagePath: 'features/home/pages/HomePage'
+      pagePath: RoutePaths.HOME
     },
     {
       text: $r('app.string.custom_tab_bar'),
@@ -26,7 +27,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.icon1'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
-      pagePath: 'features/home/pages/BartendingStationPage'
+      pagePath: RoutePaths.BARTENDING_STATION
     },
     {
       text: $r('app.string.custom_tab_news'),
@@ -34,7 +35,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.icon2'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
-      pagePath: 'features/recipe/pages/RecipeLibraryPage'
+      pagePath: RoutePaths.RECIPE_LIBRARY
     },
     {
       text: $r('app.string.custom_tab_friend'),
@@ -42,7 +43,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.icon3'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
-      pagePath: 'features/community/pages/CommunityPage'
+      pagePath: RoutePaths.COMMUNITY
     },
     {
       text: $r('app.string.custom_tab_mine'),
@@ -50,7 +51,7 @@ export struct NavigationPage {
       selectImage: $r('app.media.tab_user'),
       tabsFontColor: UiTokens.textSecondary,
       tabsSelectFontColor: UiTokens.textPrimary,
-      pagePath: 'features/profile/pages/ProfilePage'
+      pagePath: RoutePaths.PROFILE
     }
   ];
 

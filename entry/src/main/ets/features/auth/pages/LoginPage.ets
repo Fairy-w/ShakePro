@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
 import common from '@ohos.app.ability.common';
@@ -24,7 +25,7 @@ export struct LoginPage {
       await sessionStore.init(this.getHostContext());
       const authorization = await sessionStore.getAuthorizationValue();
       if (authorization.trim().length > 0) {
-        router.replaceUrl({ url: 'features/home/pages/NavigationPage' });
+        router.replaceUrl({ url: RoutePaths.NAVIGATION });
         return;
       }
     } catch (_) {
@@ -55,7 +56,7 @@ export struct LoginPage {
         username,
         password
       });
-      router.replaceUrl({ url: 'features/home/pages/NavigationPage' });
+      router.replaceUrl({ url: RoutePaths.NAVIGATION });
     } catch (error) {
       this.showErrorMessage(this.resolveErrorMessage(error));
     } finally {
@@ -237,7 +238,7 @@ export struct LoginPage {
                   .fontSize(14)
                   .fontColor(UiTokens.textSecondary)
                   .onClick(() => {
-                    router.pushUrl({ url: 'features/auth/pages/RegisterPage' });
+                    router.pushUrl({ url: RoutePaths.REGISTER });
                   });
 
                 Text('·')

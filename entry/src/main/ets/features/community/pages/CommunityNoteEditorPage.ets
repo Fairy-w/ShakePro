@@ -1,3 +1,4 @@
+import { RoutePaths } from '../../../core/router/RoutePaths';
 import common from '@ohos.app.ability.common';
 import promptAction from '@ohos.promptAction';
 import router from '@ohos.router';
@@ -226,7 +227,7 @@ export struct CommunityNoteEditorPage {
       this.showActionToast('发布成功');
       if (postId.length > 0) {
         router.replaceUrl({
-          url: 'features/community/pages/CommunityPostDetailPage',
+          url: RoutePaths.COMMUNITY_DETAIL,
           params: {
             postId: postId
           }

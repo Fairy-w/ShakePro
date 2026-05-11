@@ -2,7 +2,7 @@ import {
   MaterialDraft,
   MaterialRecord,
   SelectableMaterial
-} from './BartendingStationMockData';
+} from './StationMaterialModels';
 import { getMaterialVisualMeta, normalizeCategoryId, normalizeString } from './StationMaterialApiModels';
 
 let stagingMaterialsState: SelectableMaterial[] = [];
